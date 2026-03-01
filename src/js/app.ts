@@ -1,41 +1,15 @@
 import '../css/app.css';
-import '../css/woocommerce.css';
 import { mount } from 'svelte';
-
 import Example from '../components/Example.svelte';
-import ProductStockBadge from '../components/ProductStockBadge.svelte';
-import ProductSaleChip from '../components/ProductSaleChip.svelte';
-import ProductBenefits from '../components/ProductBenefits.svelte';
-import ProductColorSwatches from '../components/ProductColorSwatches.svelte';
-import ProductBundleOptions from '../components/ProductBundleOptions.svelte';
-import BuyNowButton from '../components/BuyNowButton.svelte';
-import ProductPaymentBadges from '../components/ProductPaymentBadges.svelte';
-import ProductDeliveryWindow from '../components/ProductDeliveryWindow.svelte';
-import ProductTestimonial from '../components/ProductTestimonial.svelte';
-import ProductAccordions from '../components/ProductAccordions.svelte';
 
-function mountComponent(id: string, Component: Parameters<typeof mount>[0]): void {
-  const el = document.getElementById(id);
-  if (!el) return;
-  mount(Component, {
-    target: el,
-    props: JSON.parse(el.dataset.config || '{}'),
+const exampleEl = document.getElementById('example-component');
+if (exampleEl) {
+  const config = JSON.parse(exampleEl.dataset.config || '{}');
+  mount(Example, {
+    target: exampleEl,
+    props: config,
   });
 }
-
-mountComponent('example-component', Example);
-
-// Product page components — each receives its data via data-config from PHP.
-mountComponent('brand-stock-badge', ProductStockBadge);
-mountComponent('brand-sale-chip', ProductSaleChip);
-mountComponent('brand-benefits', ProductBenefits);
-mountComponent('brand-color-swatches', ProductColorSwatches);
-mountComponent('brand-bundle-options', ProductBundleOptions);
-mountComponent('brand-buy-now', BuyNowButton);
-mountComponent('brand-payment-badges', ProductPaymentBadges);
-mountComponent('brand-delivery-window', ProductDeliveryWindow);
-mountComponent('brand-testimonial', ProductTestimonial);
-mountComponent('brand-accordions', ProductAccordions);
 
 // ─── Mobile nav ───────────────────────────────────────────────────────────────
 
