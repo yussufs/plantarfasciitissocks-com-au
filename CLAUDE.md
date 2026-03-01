@@ -22,8 +22,8 @@ Svelte components are used for interactive UI elements only. Page structure stay
    <div id="my-component" data-config='<?php echo esc_attr( wp_json_encode( $data ) ); ?>'></div>
    ```
 
-2. `src/js/app.js` imports the component and mounts it:
-   ```js
+2. `src/js/app.ts` imports the component and mounts it:
+   ```ts
    import MyComponent from '../components/MyComponent.svelte';
    import { mount } from 'svelte';
 
@@ -154,5 +154,6 @@ Only override what you need. WooCommerce will flag outdated overrides in wp-admi
 |---|---|---|
 | `setup-local.sh` | `./scripts/setup-local.sh brand-name` | Create local WordPress dev environment |
 | `pull-db.sh` | `./scripts/pull-db.sh` | Pull production DB to local, run search-replace |
+| `seed-products.sh` | `./scripts/seed-products.sh brand-name --count 12` | Seed dummy WooCommerce products/categories for local theme previews |
 | `init-production.sh` | `./scripts/init-production.sh brand-name domain.com` | Configure fresh Hostinger WordPress install |
 | `config.example.sh` | Copy to `config.sh` | Configuration template (gitignored) |

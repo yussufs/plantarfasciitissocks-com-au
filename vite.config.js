@@ -9,7 +9,7 @@ export default defineConfig({
     manifest: true,
     rollupOptions: {
       input: {
-        app: path.resolve(__dirname, 'src/js/app.js'),
+        app: path.resolve(__dirname, 'src/js/app.ts'),
       },
     },
   },

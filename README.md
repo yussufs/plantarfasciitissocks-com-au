@@ -20,6 +20,9 @@ npm install
 # Start Vite dev server (HMR)
 npm run dev
 
+# Seed local WooCommerce products for theme preview
+./scripts/seed-products.sh my-brand --count 12
+
 # Visit http://my-brand.test
 ```
 
