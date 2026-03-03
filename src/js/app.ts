@@ -1,6 +1,9 @@
 import '../css/app.css';
 import { mount } from 'svelte';
 import Example from '../components/Example.svelte';
+import ProductGallery from '../components/ProductGallery.svelte';
+import ProductOptions from '../components/ProductOptions.svelte';
+import ProductReviews from '../components/ProductReviews.svelte';
 
 const exampleEl = document.getElementById('example-component');
 if (exampleEl) {
@@ -8,6 +11,32 @@ if (exampleEl) {
   mount(Example, {
     target: exampleEl,
     props: config,
+  });
+}
+
+// ─── Product page components ──────────────────────────────────────────────────
+
+const galleryEl = document.getElementById('product-gallery');
+if (galleryEl) {
+  mount(ProductGallery, {
+    target: galleryEl,
+    props: JSON.parse(galleryEl.dataset.config || '{}'),
+  });
+}
+
+const optionsEl = document.getElementById('product-options');
+if (optionsEl) {
+  mount(ProductOptions, {
+    target: optionsEl,
+    props: JSON.parse(optionsEl.dataset.config || '{}'),
+  });
+}
+
+const reviewsEl = document.getElementById('product-reviews');
+if (reviewsEl) {
+  mount(ProductReviews, {
+    target: reviewsEl,
+    props: JSON.parse(reviewsEl.dataset.config || '{}'),
   });
 }
 

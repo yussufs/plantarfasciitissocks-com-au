@@ -33,8 +33,7 @@ $blog_url      = $posts_page_id ? get_permalink( $posts_page_id ) : home_url( '/
 $contact_page = get_page_by_path( 'contact-us' );
 $contact_url  = $contact_page ? get_permalink( $contact_page ) : home_url( '/contact-us/' );
 
-$tracking_page = get_page_by_path( 'tracking' );
-$tracking_url  = $tracking_page ? get_permalink( $tracking_page ) : home_url( '/tracking/' );
+$tracking_url = 'https://auspost.com.au/mypost/track/search';
 
 $privacy_url = get_privacy_policy_url();
 if ( ! $privacy_url ) {
@@ -112,7 +111,7 @@ if ( post_type_exists( 'product' ) ) {
             <nav class="site-nav site-nav-right" aria-label="<?php esc_attr_e( 'Primary menu right', 'brand-theme' ); ?>">
                 <ul class="site-menu">
                     <li><a class="menu-link" href="<?php echo esc_url( $contact_url ); ?>"><?php esc_html_e( 'Contact Us', 'brand-theme' ); ?></a></li>
-                    <li><a class="menu-link" href="<?php echo esc_url( $tracking_url ); ?>"><?php esc_html_e( 'Tracking', 'brand-theme' ); ?></a></li>
+                    <li><a class="menu-link" href="<?php echo esc_url( $tracking_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Tracking', 'brand-theme' ); ?></a></li>
                     <li class="menu-item-has-children">
                         <button type="button" class="menu-link menu-link-button"><?php esc_html_e( 'Legal', 'brand-theme' ); ?></button>
                         <ul class="site-submenu site-submenu-right">
@@ -138,17 +137,10 @@ if ( post_type_exists( 'product' ) ) {
             </button>
             <div class="mobile-actions lg:hidden">
                 <a class="mobile-icon-link" href="<?php echo esc_url( $search_url ); ?>" aria-label="<?php esc_attr_e( 'Search', 'brand-theme' ); ?>">
-                    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="7"></circle>
-                        <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
-                    </svg>
+                    <?php brand_theme_icon( 'search', array( 'class' => 'w-5 h-5' ) ); ?>
                 </a>
                 <a class="mobile-icon-link" href="<?php echo esc_url( $cart_url ); ?>" aria-label="<?php esc_attr_e( 'Cart', 'brand-theme' ); ?>">
-                    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="9" cy="20" r="1.5"></circle>
-                        <circle cx="18" cy="20" r="1.5"></circle>
-                        <path d="M2 3h2.5l2.3 10.2a1 1 0 0 0 1 .8h10.7a1 1 0 0 0 1-.8l1.4-6.2H6.1"></path>
-                    </svg>
+                    <?php brand_theme_icon( 'shopping-cart', array( 'class' => 'w-5 h-5' ) ); ?>
                 </a>
             </div>
         </div>
@@ -159,10 +151,7 @@ if ( post_type_exists( 'product' ) ) {
                 <p><?php esc_html_e( 'Menu', 'brand-theme' ); ?></p>
                 <button type="button" class="mobile-drawer-close" data-mobile-nav-close>
                     <span class="sr-only"><?php esc_html_e( 'Close menu', 'brand-theme' ); ?></span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <line x1="5" y1="5" x2="19" y2="19"></line>
-                        <line x1="19" y1="5" x2="5" y2="19"></line>
-                    </svg>
+                    <?php brand_theme_icon( 'x', array( 'class' => 'w-5 h-5' ) ); ?>
                 </button>
             </div>
             <ul class="mobile-menu-list">
@@ -180,7 +169,7 @@ if ( post_type_exists( 'product' ) ) {
                 </li>
                 <li><a href="<?php echo esc_url( $blog_url ); ?>"><?php esc_html_e( 'Blog', 'brand-theme' ); ?></a></li>
                 <li><a href="<?php echo esc_url( $contact_url ); ?>"><?php esc_html_e( 'Contact Us', 'brand-theme' ); ?></a></li>
-                <li><a href="<?php echo esc_url( $tracking_url ); ?>"><?php esc_html_e( 'Tracking', 'brand-theme' ); ?></a></li>
+                <li><a href="<?php echo esc_url( $tracking_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Tracking', 'brand-theme' ); ?></a></li>
                 <li class="mobile-dropdown">
                     <details>
                         <summary><?php esc_html_e( 'Legal', 'brand-theme' ); ?></summary>

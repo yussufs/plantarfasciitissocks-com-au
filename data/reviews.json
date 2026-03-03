@@ -1,0 +1,35 @@
+[
+  {
+    "id": 1,
+    "author": "Sarah M.",
+    "location": "Sydney, NSW",
+    "rating": 5,
+    "text": "I've been using this for about 3 weeks now and the difference is incredible. My hands feel so much better in the mornings. Highly recommend to anyone dealing with stiffness.",
+    "image": "review-sarah.jpg",
+    "product_slugs": ["*"],
+    "featured": true,
+    "date": "2025-11-15T00:00:00+11:00"
+  },
+  {
+    "id": 2,
+    "author": "David K.",
+    "location": "Melbourne, VIC",
+    "rating": 5,
+    "text": "Bought this for my wife and she absolutely loves it. The quality is fantastic and it arrived faster than expected. Will be ordering more for the family.",
+    "image": null,
+    "product_slugs": ["*"],
+    "featured": true,
+    "date": "2025-12-02T00:00:00+11:00"
+  },
+  {
+    "id": 3,
+    "author": "Linda P.",
+    "location": "Brisbane, QLD",
+    "rating": 4,
+    "text": "Really good product. Comfortable to wear and well-made. Took a couple of days to get used to but now I wear it every day. Only giving 4 stars because the sizing guide could be clearer.",
+    "image": "review-linda.jpg",
+    "product_slugs": ["*"],
+    "featured": false,
+    "date": "2026-01-10T00:00:00+11:00"
+  }
+]

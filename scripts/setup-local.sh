@@ -105,6 +105,45 @@ wp option update woocommerce_calc_taxes "yes" --path="$SITE_DIR"
 # Create WooCommerce pages.
 wp wc tool run install_pages --user=1 --path="$SITE_DIR" 2>/dev/null || echo "    WooCommerce pages may already exist."
 
+# Configure shipping zones and methods.
+echo "==> Configuring shipping..."
+wp eval '
+$zone = new WC_Shipping_Zone();
+$zone->set_zone_name("Australia");
+$zone->set_zone_order(1);
+$zone->save();
+$zone->add_location("AU", "country");
+$zone->save();
+$free_id  = $zone->add_shipping_method("free_shipping");
+$flat_id  = $zone->add_shipping_method("flat_rate");
+update_option("woocommerce_free_shipping_{$free_id}_settings", array(
+    "title"    => "Free Shipping (Untracked, 4-7 Business Days)",
+    "requires" => "",
+    "ignore_discounts" => "no",
+    "min_amount" => "0",
+));
+update_option("woocommerce_flat_rate_{$flat_id}_settings", array(
+    "title"      => "Priority Shipping (Tracked, 1-4 Business Days)",
+    "cost"       => "3.95",
+    "tax_status" => "taxable",
+    "type"       => "class",
+));
+echo "Shipping zone {$zone->get_id()} created with methods {$free_id}, {$flat_id}\n";
+' --path="$SITE_DIR" 2>/dev/null || echo "    Shipping setup — configure manually in WooCommerce > Settings > Shipping."
+wp option update woocommerce_enable_shipping_calc "yes" --path="$SITE_DIR" 2>/dev/null || true
+
+# Create blog page and configure reading settings.
+echo "==> Setting up blog page..."
+BLOG_ID=$(wp post list --post_type=page --name=blog --field=ID --path="$SITE_DIR" 2>/dev/null)
+if [ -z "$BLOG_ID" ]; then
+    BLOG_ID=$(wp post create --post_type=page --post_title='Blog' --post_status=publish --post_name=blog --path="$SITE_DIR" --porcelain 2>/dev/null)
+    echo "    Blog page created (ID: $BLOG_ID)."
+else
+    echo "    Blog page already exists (ID: $BLOG_ID)."
+fi
+wp option update page_for_posts "$BLOG_ID" --path="$SITE_DIR" 2>/dev/null
+wp option update show_on_front page --path="$SITE_DIR" 2>/dev/null
+
 # Disable comments.
 wp option update default_comment_status "closed" --path="$SITE_DIR"
 
