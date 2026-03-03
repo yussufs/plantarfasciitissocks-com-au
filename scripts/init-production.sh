@@ -98,17 +98,27 @@ wp option update woocommerce_enable_shipping_calc "yes" --path="$WP_PATH" 2>/dev
 wp rewrite structure '/%postname%/' --path="$WP_PATH"
 wp rewrite flush --path="$WP_PATH"
 
-# Create blog page and configure reading settings.
-echo "==> Setting up blog page..."
-BLOG_ID=$(wp post list --post_type=page --name=blog --field=ID --path="$WP_PATH" 2>/dev/null)
+# Create Home and Blog pages, configure reading settings.
+echo "==> Setting up Home and Blog pages..."
+HOME_ID=$(wp post list --post_type=page --name=home --field=ID --path="$WP_PATH" 2>/dev/null | grep -E '^[0-9]+$')
+if [ -z "$HOME_ID" ]; then
+    HOME_ID=$(wp post create --post_type=page --post_title='Home' --post_status=publish --post_name=home --path="$WP_PATH" --porcelain 2>/dev/null | grep -E '^[0-9]+$')
+    echo "    Home page created (ID: $HOME_ID)."
+else
+    echo "    Home page already exists (ID: $HOME_ID)."
+fi
+
+BLOG_ID=$(wp post list --post_type=page --name=blog --field=ID --path="$WP_PATH" 2>/dev/null | grep -E '^[0-9]+$')
 if [ -z "$BLOG_ID" ]; then
-    BLOG_ID=$(wp post create --post_type=page --post_title='Blog' --post_status=publish --post_name=blog --path="$WP_PATH" --porcelain 2>/dev/null)
+    BLOG_ID=$(wp post create --post_type=page --post_title='Blog' --post_status=publish --post_name=blog --path="$WP_PATH" --porcelain 2>/dev/null | grep -E '^[0-9]+$')
     echo "    Blog page created (ID: $BLOG_ID)."
 else
     echo "    Blog page already exists (ID: $BLOG_ID)."
 fi
-wp option update page_for_posts "$BLOG_ID" --path="$WP_PATH" 2>/dev/null
+
 wp option update show_on_front page --path="$WP_PATH" 2>/dev/null
+wp option update page_on_front "$HOME_ID" --path="$WP_PATH" 2>/dev/null
+wp option update page_for_posts "$BLOG_ID" --path="$WP_PATH" 2>/dev/null
 
 # Disable comments.
 wp option update default_comment_status "closed" --path="$WP_PATH"
