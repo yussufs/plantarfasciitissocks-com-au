@@ -1,19 +1,20 @@
 <?php
 /**
- * Archive template.
+ * Blog posts page template.
+ *
+ * Used when a static front page is set and this is the posts page.
  *
  * @package BrandTheme
  */
 
 get_header();
+
+set_query_var( 'page_header_title', __( 'Our Blog', 'brand-theme' ) );
+set_query_var( 'page_subtitle', __( 'Tips, guides, and the latest updates from our team.', 'brand-theme' ) );
+get_template_part( 'template-parts/content/page-header' );
 ?>
 
 <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-<header class="mb-8">
-    <?php the_archive_title( '<h1 class="text-3xl font-bold text-gray-900">', '</h1>' ); ?>
-    <?php the_archive_description( '<div class="mt-2 text-gray-600">', '</div>' ); ?>
-</header>
-
 <?php if ( have_posts() ) : ?>
     <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
         <?php while ( have_posts() ) : the_post(); ?>
@@ -39,6 +40,7 @@ get_header();
 
     <div class="mt-8">
         <?php the_posts_pagination( array(
+            'class'     => 'flex items-center gap-2',
             'prev_text' => __( '&larr; Previous', 'brand-theme' ),
             'next_text' => __( 'Next &rarr;', 'brand-theme' ),
         ) ); ?>
@@ -46,7 +48,6 @@ get_header();
 <?php else : ?>
     <p class="text-gray-600"><?php esc_html_e( 'No posts found.', 'brand-theme' ); ?></p>
 <?php endif; ?>
-
 </main>
 
 <?php

@@ -8,6 +8,7 @@
 get_header();
 ?>
 
+<main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 <?php while ( have_posts() ) : the_post(); ?>
     <article id="post-<?php the_ID(); ?>" <?php post_class( 'mx-auto max-w-3xl' ); ?>>
         <header class="mb-8">
@@ -46,6 +47,7 @@ get_header();
     ) );
     ?>
 <?php endwhile; ?>
+</main>
 
 <?php
 get_footer();

@@ -5,7 +5,6 @@
  * @package BrandTheme
  */
 ?>
-</main>
 
 <footer class="mt-auto border-t border-gray-200 bg-gray-50">
     <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">

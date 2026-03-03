@@ -8,6 +8,7 @@
 get_header();
 ?>
 
+<main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 <section class="py-12 text-center">
     <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
         <?php bloginfo( 'name' ); ?>
@@ -61,6 +62,8 @@ $example_data = array(
         data-config='<?php echo esc_attr( wp_json_encode( $example_data ) ); ?>'
     ></div>
 </section>
+
+</main>
 
 <?php
 get_footer();

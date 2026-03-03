@@ -1,5 +1,6 @@
 <script>
   import ColorSwatches from './ColorSwatches.svelte';
+  import AttributeSelector from './AttributeSelector.svelte';
   import BundleSelector from './BundleSelector.svelte';
 
   /**
@@ -12,6 +13,7 @@
    *   currencySymbol: string,
    *   variations: Array<any>,
    *   colorAttributes: Record<string, Array<any>>,
+   *   selectAttributes: Record<string, Array<any>>,
    *   bundleTiers: Array<any>,
    *   wcAjaxUrl: string,
    *   cartUrl: string,
@@ -28,6 +30,7 @@
     currencySymbol = '$',
     variations = [],
     colorAttributes = {},
+    selectAttributes = {},
     bundleTiers = [],
     wcAjaxUrl = '',
     cartUrl = '',
@@ -47,6 +50,11 @@
     for (const [attrName, swatches] of Object.entries(colorAttributes)) {
       if (swatches.length > 0) {
         initial[attrName] = swatches[0].slug;
+      }
+    }
+    for (const [attrName, options] of Object.entries(selectAttributes)) {
+      if (options.length > 0) {
+        initial[attrName] = options[0].slug;
       }
     }
     selectedAttributes = initial;
@@ -138,15 +146,10 @@
       const url = wcAjaxUrl.replace('%%endpoint%%', 'add_to_cart');
 
       const body = new URLSearchParams();
-      body.append('product_id', String(productId));
+      // WC's wc-ajax=add_to_cart reads product_id and detects if it's a
+      // variation automatically — it does NOT read a separate variation_id field.
+      body.append('product_id', String(variationId || productId));
       body.append('quantity', String(qty));
-      if (variationId) {
-        body.append('variation_id', String(variationId));
-        // Add variation attributes.
-        for (const [attr, value] of Object.entries(selectedAttributes)) {
-          body.append(`attribute_${attr}`, value);
-        }
-      }
 
       const res = await fetch(url, {
         method: 'POST',
@@ -187,7 +190,7 @@
   }
 </script>
 
-<div class="space-y-5">
+<div class="space-y-3 lg:space-y-5">
   <!-- Reactive price display -->
   <div class="flex items-center gap-3">
     <span class="product-price">{currencySymbol}{totalPrice}</span>
@@ -201,6 +204,16 @@
     <ColorSwatches
       attributeName={attrName}
       {swatches}
+      selected={selectedAttributes[attrName] || ''}
+      onselect={(slug) => selectAttribute(attrName, slug)}
+    />
+  {/each}
+
+  <!-- Other attributes (size, etc.) -->
+  {#each Object.entries(selectAttributes) as [attrName, options]}
+    <AttributeSelector
+      attributeName={attrName}
+      {options}
       selected={selectedAttributes[attrName] || ''}
       onselect={(slug) => selectAttribute(attrName, slug)}
     />

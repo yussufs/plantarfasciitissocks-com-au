@@ -69,11 +69,7 @@
       .slice(0, 2);
   }
 
-  function formatDate(dateStr) {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
-  }
+
 </script>
 
 <!-- Header -->
@@ -167,11 +163,9 @@
               Verified
             </span>
           </div>
-          <div class="review-author-meta">
-            {#if review.location}{review.location}{/if}
-            {#if review.location && review.date} &middot; {/if}
-            {#if review.date}{formatDate(review.date)}{/if}
-          </div>
+          {#if review.location}
+            <div class="review-author-meta">{review.location}</div>
+          {/if}
         </div>
       </div>
     </div>

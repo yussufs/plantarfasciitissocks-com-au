@@ -6,6 +6,56 @@
  */
 
 // ──────────────────────────────────────────────
+// Contact Form Handler
+// ──────────────────────────────────────────────
+
+function brand_theme_handle_contact_form() {
+    // Verify nonce.
+    if ( ! isset( $_POST['brand_contact_nonce'] ) || ! wp_verify_nonce( $_POST['brand_contact_nonce'], 'brand_contact_form' ) ) {
+        wp_safe_redirect( wp_get_referer() ? wp_get_referer() : home_url( '/contact-us/' ) );
+        exit;
+    }
+
+    // Honeypot check — bots fill this hidden field.
+    if ( ! empty( $_POST['website'] ) ) {
+        // Silently reject but redirect as if successful to not tip off bots.
+        wp_safe_redirect( add_query_arg( 'contact', 'success', wp_get_referer() ? wp_get_referer() : home_url( '/contact-us/' ) ) );
+        exit;
+    }
+
+    $name    = isset( $_POST['contact_name'] ) ? sanitize_text_field( wp_unslash( $_POST['contact_name'] ) ) : '';
+    $email   = isset( $_POST['contact_email'] ) ? sanitize_email( wp_unslash( $_POST['contact_email'] ) ) : '';
+    $message = isset( $_POST['contact_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['contact_message'] ) ) : '';
+
+    // Validate required fields.
+    if ( ! $name || ! is_email( $email ) || ! $message ) {
+        wp_safe_redirect( add_query_arg( 'contact', 'error', wp_get_referer() ? wp_get_referer() : home_url( '/contact-us/' ) ) );
+        exit;
+    }
+
+    $to      = get_option( 'admin_email' );
+    $subject = sprintf( '[%s] Contact Form: %s', get_bloginfo( 'name' ), $name );
+    $body    = sprintf(
+        "Name: %s\nEmail: %s\n\nMessage:\n%s",
+        $name,
+        $email,
+        $message
+    );
+    $headers = array(
+        'Content-Type: text/plain; charset=UTF-8',
+        sprintf( 'Reply-To: %s <%s>', $name, $email ),
+    );
+
+    $sent = wp_mail( $to, $subject, $body, $headers );
+
+    $status = $sent ? 'success' : 'error';
+    wp_safe_redirect( add_query_arg( 'contact', $status, wp_get_referer() ? wp_get_referer() : home_url( '/contact-us/' ) ) );
+    exit;
+}
+add_action( 'admin_post_nopriv_brand_contact_form', 'brand_theme_handle_contact_form' );
+add_action( 'admin_post_brand_contact_form', 'brand_theme_handle_contact_form' );
+
+// ──────────────────────────────────────────────
 // Theme Setup
 // ──────────────────────────────────────────────
 
@@ -68,6 +118,17 @@ add_action( 'woocommerce_after_main_content', function () {
 
 // Remove default sidebar from shop/product archive pages.
 remove_action( 'woocommerce_sidebar', 'woocommerce_get_sidebar', 10 );
+
+// Append an inline remove link inside the quantity cell (visible on mobile only).
+add_filter( 'woocommerce_cart_item_quantity', function ( $product_quantity, $cart_item_key, $cart_item ) {
+    $remove_url = esc_url( wc_get_cart_remove_url( $cart_item_key ) );
+    $remove_link = sprintf(
+        '<a href="%s" class="cart-inline-remove" aria-label="%s">&times;</a>',
+        $remove_url,
+        esc_attr__( 'Remove this item', 'brand-theme' )
+    );
+    return '<div class="cart-qty-row">' . $product_quantity . $remove_link . '</div>';
+}, 10, 3 );
 
 // ──────────────────────────────────────────────
 // Widget Areas
@@ -444,27 +505,37 @@ function brand_theme_get_product_svelte_data( $product ) {
         }
     }
 
-    // Color attributes for swatches.
-    $color_attributes = array();
+    // Variation attributes split by type: color swatches vs generic selectors.
+    $color_attributes  = array();
+    $select_attributes = array();
     if ( $product->is_type( 'variable' ) ) {
         $attributes = $product->get_variation_attributes();
         foreach ( $attributes as $attr_name => $options ) {
-            $taxonomy = str_replace( 'attribute_', '', $attr_name );
-            if ( stripos( $taxonomy, 'color' ) !== false || stripos( $taxonomy, 'colour' ) !== false ) {
+            $taxonomy  = str_replace( 'attribute_', '', $attr_name );
+            $is_colour = stripos( $taxonomy, 'color' ) !== false || stripos( $taxonomy, 'colour' ) !== false;
+
+            if ( $is_colour ) {
                 $swatches = array();
                 foreach ( $options as $option ) {
-                    $color_hex = get_term_meta(
-                        get_term_by( 'slug', $option, $taxonomy ) ? get_term_by( 'slug', $option, $taxonomy )->term_id : 0,
-                        '_brand_color_hex',
-                        true
-                    );
+                    $term      = get_term_by( 'slug', $option, $taxonomy );
+                    $color_hex = $term ? get_term_meta( $term->term_id, '_brand_color_hex', true ) : '';
                     $swatches[] = array(
                         'slug'  => $option,
-                        'label' => ucfirst( str_replace( '-', ' ', $option ) ),
+                        'label' => $term ? $term->name : ucfirst( str_replace( '-', ' ', $option ) ),
                         'hex'   => $color_hex ?: null,
                     );
                 }
                 $color_attributes[ $attr_name ] = $swatches;
+            } else {
+                $choices = array();
+                foreach ( $options as $option ) {
+                    $term = get_term_by( 'slug', $option, $taxonomy );
+                    $choices[] = array(
+                        'slug'  => $option,
+                        'label' => $term ? $term->name : ucfirst( str_replace( '-', ' ', $option ) ),
+                    );
+                }
+                $select_attributes[ $attr_name ] = $choices;
             }
         }
     }
@@ -500,7 +571,8 @@ function brand_theme_get_product_svelte_data( $product ) {
         'currencySymbol'  => get_woocommerce_currency_symbol(),
         'images'          => $images,
         'variations'      => $variations,
-        'colorAttributes' => $color_attributes,
+        'colorAttributes'  => $color_attributes,
+        'selectAttributes' => $select_attributes,
         'bundleTiers'     => $bundle_tiers,
         'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
         'wcAjaxUrl'       => WC_AJAX::get_endpoint( '%%endpoint%%' ),

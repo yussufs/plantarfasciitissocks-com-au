@@ -8,7 +8,11 @@
 defined( 'ABSPATH' ) || exit;
 
 get_header();
+?>
 
+<main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+
+<?php
 while ( have_posts() ) :
     the_post();
 
@@ -71,7 +75,7 @@ while ( have_posts() ) :
     }
     ?>
 
-    <div class="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-12">
         <!-- Gallery Column -->
         <div class="lg:sticky lg:top-8 lg:self-start">
             <div id="product-gallery" data-config='<?php echo esc_attr( wp_json_encode( array(
@@ -80,7 +84,7 @@ while ( have_posts() ) :
         </div>
 
         <!-- Details Column -->
-        <div class="space-y-5">
+        <div class="space-y-3 lg:space-y-5">
             <?php get_template_part( 'template-parts/content/single-product/product-badge' ); ?>
 
             <h1 class="product-title"><?php the_title(); ?></h1>
@@ -157,5 +161,9 @@ while ( have_posts() ) :
 
     <?php
 endwhile;
+?>
 
+</main>
+
+<?php
 get_footer();
