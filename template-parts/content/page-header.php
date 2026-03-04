@@ -15,7 +15,7 @@ $title    = get_query_var( 'page_header_title', '' );
 $subtitle = get_query_var( 'page_subtitle', '' );
 ?>
 <div class="page-header">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <h1 class="text-3xl font-extrabold text-white sm:text-4xl"><?php echo $title ? esc_html( $title ) : get_the_title(); ?></h1>
         <?php if ( $subtitle ) : ?>
             <p class="mt-2 text-brand-100"><?php echo esc_html( $subtitle ); ?></p>

@@ -22,7 +22,7 @@ $display_info = $shipping_info ?: $default_info;
 <details class="product-accordion" open>
     <summary>
         <span class="flex items-center gap-2">
-            <?php brand_theme_icon( 'truck', array( 'class' => 'h-4 w-4 text-zinc-500' ) ); ?>
+            <?php brand_theme_icon( 'refresh-ccw', array( 'class' => 'h-4 w-4 text-zinc-500' ) ); ?>
             <?php esc_html_e( 'Shipping & Returns', 'brand-theme' ); ?>
         </span>
         <?php brand_theme_icon( 'chevron-down', array( 'class' => 'product-accordion-icon' ) ); ?>

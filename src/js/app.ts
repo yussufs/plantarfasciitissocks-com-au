@@ -40,6 +40,21 @@ if (reviewsEl) {
   });
 }
 
+// ─── Scroll to top ───────────────────────────────────────────────────────────
+
+const scrollBtn = document.getElementById('scroll-to-top');
+if (scrollBtn) {
+  const threshold = 400;
+
+  window.addEventListener('scroll', () => {
+    scrollBtn.classList.toggle('hidden', window.scrollY < threshold);
+  }, { passive: true });
+
+  scrollBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
 // ─── Mobile nav ───────────────────────────────────────────────────────────────
 
 const mobileNavToggle = document.querySelector<HTMLButtonElement>('[data-mobile-nav-toggle]');

@@ -19,6 +19,7 @@
     "vite": "^6.2.2"
   },
   "dependencies": {
+    "@tailwindcss/typography": "^0.5.19",
     "embla-carousel": "^8.6.0",
     "lucide-svelte": "^0.576.0"
   }

@@ -120,6 +120,9 @@ wp option update show_on_front page --path="$WP_PATH" 2>/dev/null
 wp option update page_on_front "$HOME_ID" --path="$WP_PATH" 2>/dev/null
 wp option update page_for_posts "$BLOG_ID" --path="$WP_PATH" 2>/dev/null
 
+# Create legal pages (Privacy Policy, Refund Policy, Terms of Service).
+bash "$SCRIPT_DIR/create-legal-pages.sh" "$WP_PATH" "$DOMAIN"
+
 # Disable comments.
 wp option update default_comment_status "closed" --path="$WP_PATH"
 

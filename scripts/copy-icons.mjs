@@ -20,6 +20,7 @@ const ICONS = [
   'flame',
   'help-circle',
   'package',
+  'refresh-ccw',
   'search',
   'shield-check',
   'shopping-cart',
