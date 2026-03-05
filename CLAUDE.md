@@ -109,6 +109,127 @@ Push to `main` triggers GitHub Actions:
 | `SSH_KEY` | Private SSH key |
 | `REMOTE_PATH` | Remote theme path, e.g. `~/public_html/wp-content/themes/brand-name` |
 
+## Product Page Components
+
+The single product page (`woocommerce/single-product.php`) uses three Svelte components mounted via the standard data-attributes pattern. All components are **generic** — the same component works for every product, with product-specific data passed as props from PHP.
+
+### Architecture
+
+```
+PHP: brand_theme_get_product_svelte_data($product)
+  → JSON-encodes images, variations, attributes, bundles, pricing
+  → Passed via data-config to mount points
+
+Mount points in single-product.php:
+  <div id="product-gallery">   → ProductGallery.svelte
+  <div id="product-options">   → ProductOptions.svelte
+  <div id="product-reviews">   → ProductReviews.svelte (via template part)
+```
+
+### Component communication
+
+`ProductOptions` dispatches a `product:variation-changed` custom DOM event when the user selects a variation. `ProductGallery` listens for this event and updates the displayed image. No shared Svelte state — components communicate through the DOM.
+
+### Sub-components
+
+- `ColorSwatches.svelte` — colour attribute picker with hex swatches
+- `AttributeSelector.svelte` — dropdown for non-colour attributes (size, etc.)
+- `BundleSelector.svelte` — tiered bulk purchase options
+
+### Per-product customisation (WP post meta)
+
+Product-specific data is stored as WooCommerce post meta, editable in wp-admin:
+
+| Meta key | Type | Description |
+|---|---|---|
+| `_brand_bundle_tiers` | JSON | Bulk pricing tiers (qty + discount) |
+| `_brand_testimonial` | JSON | Quote + author displayed on product page |
+| `_brand_delivery_days` | string | Estimated delivery days |
+| `_brand_shipping_info` | string | Shipping details text |
+| `_brand_faqs` | JSON array | Product-specific FAQ items |
+
+### Per-product template overrides
+
+To customise a section for a specific product without touching post meta, use `get_template_part()` with the product slug:
+
+```php
+// In woocommerce/single-product.php
+get_template_part( 'template-parts/content/single-product/hero', $product->get_slug() );
+```
+
+WordPress automatically looks for `hero-{slug}.php` first, then falls back to `hero.php`. Create the slug-specific file only for products that need it:
+
+```
+template-parts/content/single-product/
+├── hero.php                              ← default (all products)
+├── hero-cloud-knit-relief-gloves.php     ← override for this product only
+```
+
+No post meta, no conditionals — just a file naming convention.
+
+### Adding a new product component
+
+1. Create `src/components/MyComponent.svelte` (Svelte 5 runes syntax).
+2. Add a mount point in the PHP template:
+   ```php
+   <div id="my-component" data-config='<?php echo esc_attr( wp_json_encode( $data ) ); ?>'></div>
+   ```
+3. Mount it in `src/js/app.ts`:
+   ```ts
+   import MyComponent from '../components/MyComponent.svelte';
+   const el = document.getElementById('my-component');
+   if (el) {
+     mount(MyComponent, { target: el, props: JSON.parse(el.dataset.config || '{}') });
+   }
+   ```
+4. To communicate with other product components, use custom DOM events (`window.dispatchEvent` / `window.addEventListener`).
+
+## Reviews
+
+Reviews are **not** WooCommerce comments. They live in a static JSON file checked into the repo.
+
+### Data file
+
+`data/reviews.json` — array of review objects:
+
+```json
+{
+  "id": 1,
+  "author": "Sarah M.",
+  "location": "Sydney, NSW",
+  "rating": 5,
+  "text": "Great product, highly recommend!",
+  "image": "review-sarah.jpg",
+  "product_slugs": ["*"],
+  "featured": true,
+  "date": "2025-11-15T00:00:00+11:00"
+}
+```
+
+- `product_slugs` — array of WooCommerce product slugs this review appears on. Use `["*"]` for all products.
+- `image` — filename in `src/images/reviews/`. Served via Vite in dev, built to `dist/images/reviews/` in production.
+- `featured` — highlighted in the review grid.
+
+### How it works
+
+1. **PHP helper** `brand_theme_get_reviews($product_slug)` in `functions.php` reads `data/reviews.json` and filters by product slug (cached per request).
+2. **Template part** `template-parts/content/single-product/reviews.php` builds the config (reviews, avg rating, count) and renders the mount point + JSON-LD structured data for SEO.
+3. **Svelte component** `ProductReviews.svelte` displays the review grid with lightbox for images.
+
+### Adding a review
+
+1. Add an entry to `data/reviews.json`.
+2. If the review has an image, place it in `src/images/reviews/` (and optionally provide 400w/800w variants + WebP).
+3. Set `product_slugs` to the relevant product slugs, or `["*"]` for all products.
+4. The review will appear automatically on matching product pages.
+
+### Review images
+
+`brand_theme_get_review_image_data($filename)` in `functions.php` builds responsive image data:
+
+- **Dev mode**: served from `http://localhost:5173/src/images/reviews/`
+- **Production**: served from `dist/images/reviews/` with srcset (400w/800w) and WebP variants
+
 ## WooCommerce Template Overrides
 
 To override a WooCommerce template:

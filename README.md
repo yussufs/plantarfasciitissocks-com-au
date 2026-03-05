@@ -46,6 +46,26 @@ Add these GitHub Secrets to your repo:
 5. Run `./scripts/init-production.sh new-brand domain.com` on the server
 6. Set up GitHub Secrets and push to `main`
 
+## Product Page Components
+
+Product pages use three Svelte components mounted from PHP via `data-config` attributes:
+
+- **ProductGallery** — image carousel with variation switching
+- **ProductOptions** — attribute selectors, bundle tiers, add-to-cart
+- **ProductReviews** — review grid with lightbox
+
+Components are generic — product-specific data (images, variations, bundles, FAQs) comes from WooCommerce post meta. See [CLAUDE.md](./CLAUDE.md#product-page-components) for the full architecture.
+
+## Reviews
+
+Reviews are stored in `data/reviews.json` (not WooCommerce comments). Each review specifies which products it appears on via `product_slugs`. To add a review:
+
+1. Add an entry to `data/reviews.json`
+2. Place any review image in `src/images/reviews/`
+3. Set `product_slugs` to matching product slugs, or `["*"]` for all products
+
+See [CLAUDE.md](./CLAUDE.md#reviews) for the full data format and image handling.
+
 ## Full Documentation
 
 See [CLAUDE.md](./CLAUDE.md) for architecture, conventions, and detailed reference.
