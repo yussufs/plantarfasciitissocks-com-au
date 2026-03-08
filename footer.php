@@ -91,6 +91,16 @@ $footer_terms_url = $footer_terms_id ? get_permalink( $footer_terms_id ) : home_
 	<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
 </button>
 
+<?php
+// Cart drawer mount point (available on all pages).
+$cart_drawer_cart_url     = function_exists( 'wc_get_cart_url' ) ? wc_get_cart_url() : home_url( '/cart/' );
+$cart_drawer_checkout_url = function_exists( 'wc_get_checkout_url' ) ? wc_get_checkout_url() : home_url( '/checkout/' );
+?>
+<div id="cart-drawer" data-config='<?php echo esc_attr( wp_json_encode( array(
+	'cartUrl'     => $cart_drawer_cart_url,
+	'checkoutUrl' => $cart_drawer_checkout_url,
+) ) ); ?>'></div>
+
 <?php wp_footer(); ?>
 </body>
 </html>

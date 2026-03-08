@@ -16,6 +16,7 @@
    *   selectAttributes: Record<string, Array<any>>,
    *   bundleTiers: Array<any>,
    *   wcAjaxUrl: string,
+   *   name: string,
    *   cartUrl: string,
    *   checkoutUrl: string,
    *   nonce: string
@@ -23,6 +24,7 @@
    */
   let {
     productId,
+    name = '',
     productType = 'simple',
     regularPrice = 0,
     salePrice = null,
@@ -178,9 +180,10 @@
         return;
       }
 
-      cartMessage = 'Added to cart!';
-      cartMessageType = 'success';
-      setTimeout(() => { cartMessage = ''; }, 3000);
+      // Dispatch event for the cart drawer
+      window.dispatchEvent(new CustomEvent('cart:item-added', {
+        detail: { productName: name, qty: selectedTier?.qty || 1 },
+      }));
     } catch {
       cartMessage = 'Something went wrong. Please try again.';
       cartMessageType = 'error';
@@ -255,29 +258,15 @@
     </button>
   </div>
 
-  <!-- Cart toast -->
-  {#if cartMessage}
-    <div
-      class="cart-toast"
-      class:cart-toast-success={cartMessageType === 'success'}
-      class:cart-toast-error={cartMessageType === 'error'}
-      role="alert"
-    >
+  <!-- Error toast (success is handled by CartDrawer) -->
+  {#if cartMessage && cartMessageType === 'error'}
+    <div class="cart-toast cart-toast-error" role="alert">
       <div class="flex items-center gap-2">
-        {#if cartMessageType === 'success'}
-          <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-          </svg>
-        {:else}
-          <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-          </svg>
-        {/if}
+        <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+        </svg>
         <span class="text-sm font-medium">{cartMessage}</span>
       </div>
-      {#if cartMessageType === 'success'}
-        <a href={cartUrl} class="cart-toast-link">View Cart &rarr;</a>
-      {/if}
     </div>
   {/if}
 </div>
@@ -294,31 +283,13 @@
     animation: toast-slide-down 0.3s ease-out;
   }
 
-  .cart-toast-success {
-    background-color: #f0fdf4;
-    color: #166534;
-    border: 1px solid #bbf7d0;
-  }
-
   .cart-toast-error {
     background-color: #fef2f2;
     color: #991b1b;
     border: 1px solid #fecaca;
   }
 
-  .cart-toast-link {
-    flex-shrink: 0;
-    font-weight: 600;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    white-space: nowrap;
-  }
-
-  .cart-toast-link:hover {
-    text-decoration-thickness: 2px;
-  }
-
-  @keyframes toast-slide-down {
+@keyframes toast-slide-down {
     from {
       opacity: 0;
       transform: translateY(-0.5rem);

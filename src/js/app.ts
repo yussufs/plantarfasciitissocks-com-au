@@ -4,6 +4,7 @@ import Example from '../components/Example.svelte';
 import ProductGallery from '../components/ProductGallery.svelte';
 import ProductOptions from '../components/ProductOptions.svelte';
 import ProductReviews from '../components/ProductReviews.svelte';
+import CartDrawer from '../components/CartDrawer.svelte';
 
 const exampleEl = document.getElementById('example-component');
 if (exampleEl) {
@@ -37,6 +38,16 @@ if (reviewsEl) {
   mount(ProductReviews, {
     target: reviewsEl,
     props: JSON.parse(reviewsEl.dataset.config || '{}'),
+  });
+}
+
+// ─── Cart drawer ──────────────────────────────────────────────────────────────
+
+const cartDrawerEl = document.getElementById('cart-drawer');
+if (cartDrawerEl) {
+  mount(CartDrawer, {
+    target: cartDrawerEl,
+    props: JSON.parse(cartDrawerEl.dataset.config || '{}'),
   });
 }
 
