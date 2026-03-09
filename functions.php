@@ -89,8 +89,14 @@ function brand_theme_woocommerce_setup() {
 }
 add_action( 'after_setup_theme', 'brand_theme_woocommerce_setup' );
 
-// Disable all default WooCommerce styles so theme styling is fully Tailwind-driven.
-add_filter( 'woocommerce_enqueue_styles', '__return_empty_array' );
+// Disable default WooCommerce styles on non-checkout/cart pages (theme uses Tailwind).
+// Re-enable on cart/checkout so WooCommerce forms render correctly.
+add_filter( 'woocommerce_enqueue_styles', function ( $styles ) {
+	if ( is_checkout() ) {
+		return $styles;
+	}
+	return array();
+} );
 
 // Force classic shortcodes instead of Gutenberg blocks on cart/checkout pages.
 // This keeps markup consistent with the theme's Tailwind-based WC styles.
