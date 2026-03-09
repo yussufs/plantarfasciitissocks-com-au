@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -28,23 +29,10 @@ jobs:
       - name: Deploy via rsync
         uses: burnett01/rsync-deployments@7.0.1
         with:
-          switches: -avz --delete
+          switches: -avz --delete --exclude='node_modules/' --exclude='src/' --exclude='.git/' --exclude='.github/' --exclude='scripts/' --exclude='vite.config.js' --exclude='svelte.config.js' --exclude='tailwind.config.js' --exclude='postcss.config.js' --exclude='package.json' --exclude='package-lock.json' --exclude='CLAUDE.md' --exclude='README.md'
           path: ./
           remote_path: ${{ secrets.REMOTE_PATH }}
           remote_host: ${{ secrets.SSH_HOST }}
           remote_user: ${{ secrets.SSH_USER }}
           remote_key: ${{ secrets.SSH_KEY }}
-          exclude: |
-            node_modules/
-            src/
-            .git/
-            .github/
-            scripts/
-            vite.config.js
-            svelte.config.js
-            tailwind.config.js
-            postcss.config.js
-            package.json
-            package-lock.json
-            CLAUDE.md
-            README.md
+          remote_port: ${{ secrets.SSH_PORT }}
