@@ -7,11 +7,27 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  check-secrets:
     runs-on: ubuntu-latest
-    env:
-      HAS_SECRETS: ${{ secrets.SSH_HOST != '' && secrets.SSH_KEY != '' }}
+    outputs:
+      has_secrets: ${{ steps.check.outputs.has_secrets }}
+    steps:
+      - name: Check for deploy secrets
+        id: check
+        run: |
+          if [ -n "$SSH_HOST" ] && [ -n "$SSH_KEY" ]; then
+            echo "has_secrets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_secrets=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
 
+  deploy:
+    needs: check-secrets
+    if: needs.check-secrets.outputs.has_secrets == 'true'
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,7 +45,6 @@ jobs:
         run: npm run build
 
       - name: Deploy via rsync
-        if: env.HAS_SECRETS == 'true'
         uses: burnett01/rsync-deployments@7.0.1
         with:
           switches: -avz --delete --exclude='node_modules/' --exclude='src/' --exclude='.git/' --exclude='.github/' --exclude='scripts/' --exclude='vite.config.js' --exclude='svelte.config.js' --exclude='tailwind.config.js' --exclude='postcss.config.js' --exclude='package.json' --exclude='package-lock.json' --exclude='CLAUDE.md' --exclude='README.md'
