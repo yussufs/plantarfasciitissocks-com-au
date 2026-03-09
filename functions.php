@@ -89,8 +89,7 @@ function brand_theme_woocommerce_setup() {
 }
 add_action( 'after_setup_theme', 'brand_theme_woocommerce_setup' );
 
-// Disable default WooCommerce styles on non-checkout/cart pages (theme uses Tailwind).
-// Re-enable on cart/checkout so WooCommerce forms render correctly.
+// Disable default WooCommerce styles except on checkout pages.
 add_filter( 'woocommerce_enqueue_styles', function ( $styles ) {
 	if ( is_checkout() ) {
 		return $styles;
@@ -103,9 +102,6 @@ add_filter( 'woocommerce_enqueue_styles', function ( $styles ) {
 add_filter( 'the_content', function ( $content ) {
 	if ( is_cart() ) {
 		return '[woocommerce_cart]';
-	}
-	if ( is_checkout() && ! is_order_received_page() ) {
-		return '[woocommerce_checkout]';
 	}
 	return $content;
 } );
