@@ -4,6 +4,28 @@
 
 This is a custom WordPress/WooCommerce theme for an Australian ecommerce brand hosted on Hostinger. It's one of several independent brand sites, each with its own Git repo containing just the theme. A future SvelteKit orchestrator will connect to each brand via the WooCommerce REST API for centralised order management.
 
+## Upstream / Brand Fork Sync
+
+This repo is the shared template that brand-specific sites are forked from. Brand forks keep their own logos, theme name, and copy, but can pull non-brand improvements (build tooling, deploy workflow, shared components) from here.
+
+**Inside a brand fork**, configure a fetch-only upstream remote so changes flow one way:
+
+```bash
+git remote add upstream https://github.com/yussufs/wordpressmegaproject.git
+git remote set-url --push upstream DISABLED   # blocks accidental pushes upstream
+git fetch upstream
+```
+
+**Review what's drifted before syncing:**
+
+```bash
+git diff main upstream/main --stat
+```
+
+For each changed file, prefer **direct edits** for small one-liners and **`git cherry-pick <sha>`** for larger logical changes.
+
+**Never sync** brand-specific files: `style.css` theme header, logo paths in `header.php` / `footer.php`, `src/images/logo-*`, brand-specific template overrides. These are the entire point of the fork.
+
 ## Architecture
 
 - **Standard WordPress** — no Bedrock, no Composer for plugins. Standard `wp-content/themes/` directory structure.

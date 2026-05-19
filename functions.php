@@ -97,8 +97,8 @@ add_filter( 'woocommerce_enqueue_styles', function ( $styles ) {
 	return array();
 } );
 
-// Force classic shortcodes instead of Gutenberg blocks on cart/checkout pages.
-// This keeps markup consistent with the theme's Tailwind-based WC styles.
+// Force classic shortcode on cart page only.
+// Checkout uses WooCommerce Blocks (block editor page).
 add_filter( 'the_content', function ( $content ) {
 	if ( is_cart() ) {
 		return '[woocommerce_cart]';
