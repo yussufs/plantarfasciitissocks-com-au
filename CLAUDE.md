@@ -268,6 +268,7 @@ Only override what you need. WooCommerce will flag outdated overrides in wp-admi
 - No block theme / FSE
 - No editing WordPress core or plugin files
 - No SSR for Svelte components
+- **Do not run git commands** — the user handles all git operations (staging, commits, pushes, branches). Make the file changes only.
 
 ## Scripts Reference
 
