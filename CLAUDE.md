@@ -129,7 +129,7 @@ Push to `main` triggers GitHub Actions:
 | `SSH_HOST` | Hostinger server hostname |
 | `SSH_USER` | SSH username |
 | `SSH_KEY` | Private SSH key |
-| `REMOTE_PATH` | Remote theme path, e.g. `~/public_html/wp-content/themes/brand-name` |
+| `REMOTE_PATH` | Remote theme path, e.g. `~/domains/[DOMAIN]/public_html/wp-content/themes/brand-name` (on Hostinger, sites live under `~/domains/[DOMAIN]/public_html`) |
 
 ## Product Page Components
 
