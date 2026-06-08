@@ -24,7 +24,7 @@ source "$CONFIG"
 echo "==> Pulling database from $DOMAIN to local..."
 
 # Export production DB via SSH and import locally.
-ssh "${SSH_USER}@${SSH_HOST}" \
+ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" \
     "cd ${SSH_PATH} && wp db export -" \
     | wp db import - --path="$LOCAL_PATH"
 
