@@ -69,7 +69,33 @@
       .slice(0, 2);
   }
 
+  // Per-review "read more" state.
+  let expanded = $state(new Set());
+  let overflowing = $state(new Set());
 
+  function toggleExpanded(id) {
+    const next = new Set(expanded);
+    next.has(id) ? next.delete(id) : next.add(id);
+    expanded = next;
+  }
+
+  // Action: flag a review as overflowing when its clamped text is taller than
+  // the clamp allows, so "Read more" only appears when there's hidden text.
+  function clampObserver(node, id) {
+    function check() {
+      if (expanded.has(id)) return; // can't measure overflow while expanded
+      const isOver = node.scrollHeight > node.clientHeight + 1;
+      const has = overflowing.has(id);
+      if (isOver === has) return;
+      const next = new Set(overflowing);
+      isOver ? next.add(id) : next.delete(id);
+      overflowing = next;
+    }
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(node);
+    return { destroy() { ro.disconnect(); } };
+  }
 </script>
 
 <!-- Header -->
@@ -124,7 +150,16 @@
       </div>
 
       <!-- Review text -->
-      <p class="review-text">{review.text}</p>
+      <p
+        class="review-text"
+        class:review-text--clamped={!expanded.has(review.id)}
+        use:clampObserver={review.id}
+      >{review.text}</p>
+      {#if overflowing.has(review.id) || expanded.has(review.id)}
+        <button type="button" class="review-readmore" onclick={() => toggleExpanded(review.id)}>
+          {expanded.has(review.id) ? 'Read less' : 'Read more'}
+        </button>
+      {/if}
 
       <!-- Review image -->
       {#if review.image}
@@ -271,13 +306,14 @@
 
   .reviews-grid {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 
-  @media (min-width: 640px) {
+  @media (min-width: 768px) {
     .reviews-grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
     }
   }
 
@@ -287,7 +323,7 @@
     background: #fff;
     border: 1px solid #e4e4e7;
     border-radius: 0.75rem;
-    padding: 1.25rem;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -318,6 +354,30 @@
     margin: 0;
   }
 
+  .review-text--clamped {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
+    overflow: hidden;
+  }
+
+  .review-readmore {
+    align-self: flex-start;
+    margin-top: -0.25rem;
+    padding: 0;
+    border: none;
+    background: none;
+    color: #e24411;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .review-readmore:hover {
+    text-decoration: underline;
+  }
+
   /* ── Review image ───────────────────────────── */
 
   .review-image-btn {
@@ -338,7 +398,7 @@
 
   .review-image {
     width: 100%;
-    height: 12rem;
+    aspect-ratio: 3 / 4;
     object-fit: cover;
     border-radius: 0.5rem;
     display: block;

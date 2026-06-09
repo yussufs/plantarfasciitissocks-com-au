@@ -10,15 +10,31 @@ get_header();
 
 <main>
 
-	<!-- Hero — Split Layout -->
-	<section class="bg-brand-50">
-		<div class="mx-auto grid max-w-7xl items-center gap-8 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-24">
-			<div>
-				<h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
-					<?php esc_html_e( 'Premium Quality You Can Trust', 'brand-theme' ); ?>
+	<!-- Hero — Full-bleed background image -->
+	<?php
+	// Background image lives in the WordPress media library (uploads), not the theme.
+	$hero_bg = trailingslashit( wp_get_upload_dir()['baseurl'] ) . '2023/04/Plantar-Fasciitis-Roller-Ball-Home-Page-For-Plantar-Fasciitis-Socks-Australia.jpg';
+	?>
+	<section class="relative isolate flex min-h-[60vh] items-center overflow-hidden lg:min-h-[70vh]">
+		<!-- Background image -->
+		<img
+			src="<?php echo esc_url( $hero_bg ); ?>"
+			alt=""
+			aria-hidden="true"
+			class="absolute inset-0 -z-20 h-full w-full object-cover object-center"
+			loading="eager"
+			fetchpriority="high"
+		/>
+		<!-- Dark overlay for legibility -->
+		<div class="absolute inset-0 -z-10 bg-black/40"></div>
+
+		<div class="mx-auto w-full max-w-5xl px-4 py-20 text-center sm:px-6 sm:py-28 lg:px-8 lg:py-32">
+			<div class="mx-auto max-w-3xl bg-black/30 p-8 backdrop-blur-[2px] sm:p-12">
+				<h1 class="text-3xl font-extrabold uppercase tracking-wide text-white drop-shadow-sm sm:text-4xl lg:text-5xl">
+					<?php esc_html_e( 'Plantar Fasciitis Socks and Relief Products', 'brand-theme' ); ?>
 				</h1>
-				<p class="mt-4 text-lg text-gray-600 sm:text-xl">
-					<?php esc_html_e( 'Discover our carefully crafted products designed to make a real difference in your everyday life.', 'brand-theme' ); ?>
+				<p class="mx-auto mt-5 max-w-2xl text-base text-white/90 sm:text-lg">
+					<?php esc_html_e( 'Targeted compression socks, soothing massage tools, and proven relief — trusted by Aussies to ease heel and arch pain, every step of the day.', 'brand-theme' ); ?>
 				</p>
 				<a
 					href="<?php echo esc_url( get_permalink( wc_get_page_id( 'shop' ) ) ); ?>"
@@ -26,9 +42,6 @@ get_header();
 				>
 					<?php esc_html_e( 'Shop Now', 'brand-theme' ); ?>
 				</a>
-			</div>
-			<div class="overflow-hidden rounded-2xl">
-				<?php brand_theme_picture( 'hero-product.jpg', __( 'Featured product', 'brand-theme' ), 'h-full w-full object-cover', '(max-width: 1024px) 100vw, 50vw' ); ?>
 			</div>
 		</div>
 	</section>
@@ -91,22 +104,194 @@ get_header();
 
 	<!-- Mission / About -->
 	<section class="bg-zinc-50">
-		<div class="mx-auto grid max-w-7xl items-center gap-8 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-24">
-			<div>
-				<h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">
-					<?php esc_html_e( 'Our Mission', 'brand-theme' ); ?>
+		<div class="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+			<h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">
+				<?php esc_html_e( 'Our Mission', 'brand-theme' ); ?>
+			</h2>
+			<p class="mt-4 text-gray-600">
+				<?php esc_html_e( 'At Plantar Fasciitis Socks Australia, our mission is simple: to help Aussies get back on their feet, pain-free. We focus exclusively on plantar fasciitis — sourcing and designing compression socks, massage tools, and relief products that deliver real results. Every product is chosen for proven comfort and support, backed by genuine customer reviews and our 30-day satisfaction guarantee.', 'brand-theme' ); ?>
+			</p>
+		</div>
+	</section>
+
+	<!-- Benefits -->
+	<section class="bg-brand-600">
+		<div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+			<div class="max-w-3xl">
+				<h2 class="text-2xl font-bold text-white sm:text-3xl">
+					<?php esc_html_e( 'Discover the Benefits of Our Plantar Fasciitis Socks', 'brand-theme' ); ?>
 				</h2>
-				<p class="mt-4 text-gray-600">
-					<?php esc_html_e( 'We believe everyone deserves access to high-quality products that genuinely improve their wellbeing. That\'s why we source only the best materials and work with trusted manufacturers to deliver products you can rely on — backed by real customer reviews and our 30-day satisfaction guarantee.', 'brand-theme' ); ?>
+				<p class="mt-4 text-brand-100">
+					<?php esc_html_e( 'Our specially designed plantar fasciitis socks provide targeted compression and support to help alleviate heel pain, arch pain, and discomfort caused by plantar fasciitis. Made from high-quality, breathable materials, they keep you comfortable all day while promoting proper foot alignment and improved blood circulation.', 'brand-theme' ); ?>
 				</p>
 			</div>
-			<div class="overflow-hidden rounded-2xl">
-				<?php brand_theme_picture( 'about-mission.jpg', __( 'Our mission', 'brand-theme' ), 'h-full w-full object-cover', '(max-width: 1024px) 100vw, 50vw' ); ?>
+
+			<div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+				<div class="rounded-xl bg-white p-8 shadow-sm">
+					<?php brand_theme_icon( 'target', array( 'class' => 'h-9 w-9 text-brand-600' ) ); ?>
+					<h3 class="mt-5 text-lg font-semibold text-gray-900">
+						<?php esc_html_e( 'Targeted compression for pain relief and support', 'brand-theme' ); ?>
+					</h3>
+					<p class="mt-2 text-sm text-gray-600">
+						<?php esc_html_e( 'Graduated compression supports the arch and heel right where plantar fasciitis pain strikes.', 'brand-theme' ); ?>
+					</p>
+				</div>
+
+				<div class="rounded-xl bg-white p-8 shadow-sm">
+					<?php brand_theme_icon( 'droplets', array( 'class' => 'h-9 w-9 text-brand-600' ) ); ?>
+					<h3 class="mt-5 text-lg font-semibold text-gray-900">
+						<?php esc_html_e( 'Reduced inflammation and swelling', 'brand-theme' ); ?>
+					</h3>
+					<p class="mt-2 text-sm text-gray-600">
+						<?php esc_html_e( 'Gentle, consistent pressure helps calm inflammation and keep swelling down throughout the day.', 'brand-theme' ); ?>
+					</p>
+				</div>
+
+				<div class="rounded-xl bg-white p-8 shadow-sm">
+					<?php brand_theme_icon( 'heart-pulse', array( 'class' => 'h-9 w-9 text-brand-600' ) ); ?>
+					<h3 class="mt-5 text-lg font-semibold text-gray-900">
+						<?php esc_html_e( 'Enhanced blood circulation', 'brand-theme' ); ?>
+					</h3>
+					<p class="mt-2 text-sm text-gray-600">
+						<?php esc_html_e( 'Improved circulation promotes faster recovery and keeps tired feet feeling fresh.', 'brand-theme' ); ?>
+					</p>
+				</div>
 			</div>
 		</div>
 	</section>
 
-	<!-- Testimonials -->
+	<!-- Get Back on Your Feet — sock range -->
+	<?php
+	$uploads = trailingslashit( wp_get_upload_dir()['baseurl'] );
+
+	// Socks shown in this section. Add a new sock by appending to this array.
+	$sock_range = array(
+		array(
+			'title' => __( 'White Plantar Fasciitis Socks', 'brand-theme' ),
+			'image' => '2023/04/plantar-fasciitis-socks-white-single-pair-with-box.jpg',
+			'slug'  => 'white-plantar-fasciitis-compression-socks',
+		),
+		array(
+			'title' => __( 'Black Plantar Fasciitis Socks', 'brand-theme' ),
+			'image' => '2023/04/plantar-fasciitis-socks-black-single-pair-with-box.jpg',
+			'slug'  => 'black-plantar-fasciitis-compression-socks',
+		),
+		array(
+			'title' => __( 'Black/Copper Plantar Fasciitis Socks', 'brand-theme' ),
+			'image' => '2026/06/black-copper-plantar-fasciitis-socks-single-pair-with-box.png',
+			'slug'  => 'black-copper-plantar-fasciitis-compression-socks',
+		),
+	);
+	?>
+	<section class="bg-gray-50">
+		<div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+			<div class="max-w-3xl">
+				<h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">
+					<?php esc_html_e( 'Get Back on Your Feet with Plantar Fasciitis Socks Australia', 'brand-theme' ); ?>
+				</h2>
+				<p class="mt-4 text-gray-600">
+					<?php esc_html_e( 'Don\'t let plantar fasciitis pain hold you back from living an active and fulfilling life. Trust Plantar Fasciitis Socks Australia to provide you with the best plantar fasciitis socks and relief products on the market. Shop our selection today and experience the difference that superior comfort and support can make.', 'brand-theme' ); ?>
+				</p>
+			</div>
+
+			<div class="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+				<?php foreach ( $sock_range as $sock ) : ?>
+					<?php
+					$sock_post = get_page_by_path( $sock['slug'], OBJECT, 'product' );
+					$sock_url  = $sock_post ? get_permalink( $sock_post ) : get_permalink( wc_get_page_id( 'shop' ) );
+					?>
+					<a href="<?php echo esc_url( $sock_url ); ?>" class="group block">
+						<div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 transition group-hover:shadow-md">
+							<img
+								src="<?php echo esc_url( $uploads . $sock['image'] ); ?>"
+								alt="<?php echo esc_attr( $sock['title'] ); ?>"
+								class="h-auto w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+								loading="lazy"
+							/>
+						</div>
+						<h3 class="mt-5 text-xl font-bold text-gray-900 group-hover:text-brand-600">
+							<?php echo esc_html( $sock['title'] ); ?>
+						</h3>
+					</a>
+				<?php endforeach; ?>
+			</div>
+		</div>
+	</section>
+
+	<!-- Why Choose -->
+	<?php
+	$why_choose = array(
+		__( 'Expertly curated selection of products', 'brand-theme' ),
+		__( 'Competitive pricing and unbeatable value', 'brand-theme' ),
+		__( 'Fast shipping and hassle-free returns', 'brand-theme' ),
+		__( 'Secure online shopping experience', 'brand-theme' ),
+		__( 'Outstanding customer service', 'brand-theme' ),
+	);
+	?>
+	<section class="bg-brand-600">
+		<div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+			<div class="max-w-3xl">
+				<h2 class="text-2xl font-bold text-white sm:text-3xl">
+					<?php esc_html_e( 'Why Choose Plantar Fasciitis Socks Australia for Your Plantar Fasciitis Needs', 'brand-theme' ); ?>
+				</h2>
+				<p class="mt-4 text-brand-100">
+					<?php esc_html_e( 'At Plantar Fasciitis Socks Australia, we are dedicated to providing you with the most effective and high-quality plantar fasciitis products available. Here\'s why our customers love shopping with us:', 'brand-theme' ); ?>
+				</p>
+
+				<ul class="mt-8 space-y-4">
+					<?php foreach ( $why_choose as $reason ) : ?>
+						<li class="flex items-center gap-3 text-white">
+							<span class="flex h-6 w-6 flex-none items-center justify-center rounded bg-green-500">
+								<?php brand_theme_icon( 'check', array( 'class' => 'h-4 w-4 text-white' ) ); ?>
+							</span>
+							<span><?php echo esc_html( $reason ); ?></span>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			</div>
+		</div>
+	</section>
+
+	<!-- Testimonials — real customer reviews -->
+	<?php
+	// Social proof from real reviews: featured first, then the most recent.
+	// Keep 4★+ reviews that have text, de-duplicated, capped at 3.
+	$home_reviews    = brand_theme_get_featured_reviews( 6 );
+	$recent_comments = get_comments( array(
+		'status'    => 'approve',
+		'parent'    => 0,
+		'post_type' => 'product',
+		'number'    => 12,
+		'orderby'   => 'comment_date_gmt',
+		'order'     => 'DESC',
+	) );
+	foreach ( $recent_comments as $home_comment ) {
+		if ( in_array( $home_comment->comment_type, array( 'review', 'comment', '' ), true ) ) {
+			$home_reviews[] = brand_theme_map_review_comment( $home_comment );
+		}
+	}
+
+	$home_seen    = array();
+	$testimonials = array();
+	foreach ( $home_reviews as $home_review ) {
+		if ( isset( $home_seen[ $home_review['id'] ] ) ) {
+			continue;
+		}
+		$home_seen[ $home_review['id'] ] = true;
+		if ( ( $home_review['rating'] ?? 0 ) < 4 || '' === trim( (string) $home_review['text'] ) ) {
+			continue;
+		}
+		$testimonials[] = array(
+			'quote'    => $home_review['text'],
+			'author'   => $home_review['author'],
+			'verified' => $home_review['verified'],
+		);
+		if ( count( $testimonials ) >= 3 ) {
+			break;
+		}
+	}
+	?>
+	<?php if ( $testimonials ) : ?>
 	<section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
 		<h2 class="text-center text-2xl font-bold text-gray-900 sm:text-3xl">
 			<?php esc_html_e( 'What Our Customers Say', 'brand-theme' ); ?>
@@ -114,24 +299,6 @@ get_header();
 
 		<div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			<?php
-			$testimonials = array(
-				array(
-					'quote'    => 'Absolutely love this product! It arrived quickly and the quality exceeded my expectations. Will definitely be ordering again.',
-					'author'   => 'Sarah M.',
-					'verified' => true,
-				),
-				array(
-					'quote'    => 'I was sceptical at first, but after using it for a few weeks I can honestly say it\'s made a huge difference. Highly recommend.',
-					'author'   => 'James T.',
-					'verified' => true,
-				),
-				array(
-					'quote'    => 'Great customer service and fast shipping. The product is exactly as described. Five stars from me!',
-					'author'   => 'Michelle R.',
-					'verified' => true,
-				),
-			);
-
 			foreach ( $testimonials as $testimonial ) :
 				set_query_var( 'testimonial', $testimonial );
 				get_template_part( 'template-parts/content/single-product/testimonial' );
@@ -139,6 +306,7 @@ get_header();
 			?>
 		</div>
 	</section>
+	<?php endif; ?>
 
 	<!-- CTA Banner -->
 	<section class="bg-brand-600">

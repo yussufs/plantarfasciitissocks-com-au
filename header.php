@@ -26,19 +26,12 @@
 <?php wp_body_open(); ?>
 
 <?php
-$home_url      = home_url( '/' );
-$posts_page_id = (int) get_option( 'page_for_posts' );
-$blog_url      = $posts_page_id ? get_permalink( $posts_page_id ) : home_url( '/blog/' );
+$home_url = home_url( '/' );
 
-$contact_page = get_page_by_path( 'contact-us' );
-$contact_url  = $contact_page ? get_permalink( $contact_page ) : home_url( '/contact-us/' );
+$contact_page = get_page_by_path( 'contact' );
+$contact_url  = $contact_page ? get_permalink( $contact_page ) : home_url( '/contact/' );
 
 $tracking_url = 'https://auspost.com.au/mypost/track/search';
-
-$privacy_url = get_privacy_policy_url();
-if ( ! $privacy_url ) {
-    $privacy_url = home_url( '/privacy-policy/' );
-}
 
 $refund_page = get_page_by_path( 'refund-policy' );
 if ( ! $refund_page ) {
@@ -46,14 +39,8 @@ if ( ! $refund_page ) {
 }
 $refund_url = $refund_page ? get_permalink( $refund_page ) : home_url( '/refund-policy/' );
 
-$terms_page_id = 0;
-if ( function_exists( 'wc_terms_and_conditions_page_id' ) ) {
-    $terms_page_id = (int) wc_terms_and_conditions_page_id();
-}
-if ( ! $terms_page_id ) {
-    $terms_page_id = (int) get_option( 'woocommerce_terms_page_id' );
-}
-$terms_url = $terms_page_id ? get_permalink( $terms_page_id ) : home_url( '/terms-and-conditions/' );
+$terms_page = get_page_by_path( 'terms-of-service' );
+$terms_url  = $terms_page ? get_permalink( $terms_page ) : home_url( '/terms-of-service/' );
 
 $shop_url      = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/shop/' );
 $search_url    = home_url( '/?s=' );
@@ -80,12 +67,29 @@ if ( post_type_exists( 'product' ) ) {
         );
     }
 }
+
+// Plantar fasciitis socks shown in the header mega-menu.
+$sock_category_url = home_url( '/product-category/plantar-fasciitis-socks/' );
+$header_uploads    = trailingslashit( wp_get_upload_dir()['baseurl'] );
+$sock_menu_items   = array(
+    array(
+        'title' => __( 'Black Socks', 'brand-theme' ),
+        'image' => '2023/04/plantar-fasciitis-socks-black-single-pair-with-box.jpg',
+        'url'   => home_url( '/product/black-plantar-fasciitis-compression-socks/' ),
+    ),
+    array(
+        'title' => __( 'White Socks', 'brand-theme' ),
+        'image' => '2023/04/plantar-fasciitis-socks-white-single-pair-with-box.jpg',
+        'url'   => home_url( '/product/white-plantar-fasciitis-compression-socks/' ),
+    ),
+    array(
+        'title' => __( 'Black/Copper Socks', 'brand-theme' ),
+        'image' => '2026/06/black-copper-plantar-fasciitis-socks-single-pair-with-box.png',
+        'url'   => home_url( '/product/black-copper-plantar-fasciitis-compression-socks/' ),
+    ),
+);
 ?>
 <header class="border-b border-gray-200">
-    <div class="announcement-bar">
-        <p><?php esc_html_e( 'SITEWIDE SALE ENDING IN 72 HOURS!', 'brand-theme' ); ?></p>
-    </div>
-
     <div class="site-nav-shell mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="site-nav-row">
             <nav class="site-nav site-nav-left" aria-label="<?php esc_attr_e( 'Primary menu left', 'brand-theme' ); ?>">
@@ -100,12 +104,26 @@ if ( post_type_exists( 'product' ) ) {
                             <?php endforeach; ?>
                         </ul>
                     </li>
-                    <li><a class="menu-link" href="<?php echo esc_url( $blog_url ); ?>"><?php esc_html_e( 'Blog', 'brand-theme' ); ?></a></li>
+                    <li class="menu-item-has-children">
+                        <a class="menu-link" href="<?php echo esc_url( $sock_category_url ); ?>"><?php esc_html_e( 'Plantar Fasciitis Socks', 'brand-theme' ); ?></a>
+                        <div class="site-megamenu">
+                            <div class="site-megamenu-grid">
+                                <?php foreach ( $sock_menu_items as $sock ) : ?>
+                                    <a class="site-megamenu-card" href="<?php echo esc_url( $sock['url'] ); ?>">
+                                        <span class="site-megamenu-title"><?php echo esc_html( $sock['title'] ); ?></span>
+                                        <span class="site-megamenu-image">
+                                            <img src="<?php echo esc_url( $header_uploads . $sock['image'] ); ?>" alt="<?php echo esc_attr( $sock['title'] ); ?>" loading="lazy" />
+                                        </span>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </li>
                 </ul>
             </nav>
 
             <a href="<?php echo esc_url( $home_url ); ?>" class="site-logo" aria-label="<?php esc_attr_e( 'Go to homepage', 'brand-theme' ); ?>">
-                <?php bloginfo( 'name' ); ?>
+                <?php get_template_part( 'template-parts/logo', null, array( 'class' => 'h-16 w-auto sm:h-20 md:h-28' ) ); ?>
             </a>
 
             <nav class="site-nav site-nav-right" aria-label="<?php esc_attr_e( 'Primary menu right', 'brand-theme' ); ?>">
@@ -115,9 +133,8 @@ if ( post_type_exists( 'product' ) ) {
                     <li class="menu-item-has-children">
                         <button type="button" class="menu-link menu-link-button"><?php esc_html_e( 'Legal', 'brand-theme' ); ?></button>
                         <ul class="site-submenu site-submenu-right">
-                            <li><a href="<?php echo esc_url( $privacy_url ); ?>"><?php esc_html_e( 'Privacy Policy', 'brand-theme' ); ?></a></li>
                             <li><a href="<?php echo esc_url( $refund_url ); ?>"><?php esc_html_e( 'Refund Policy', 'brand-theme' ); ?></a></li>
-                            <li><a href="<?php echo esc_url( $terms_url ); ?>"><?php esc_html_e( 'Terms and Conditions', 'brand-theme' ); ?></a></li>
+                            <li><a href="<?php echo esc_url( $terms_url ); ?>"><?php esc_html_e( 'Terms of Service', 'brand-theme' ); ?></a></li>
                         </ul>
                     </li>
                 </ul>
@@ -167,16 +184,25 @@ if ( post_type_exists( 'product' ) ) {
                         </ul>
                     </details>
                 </li>
-                <li><a href="<?php echo esc_url( $blog_url ); ?>"><?php esc_html_e( 'Blog', 'brand-theme' ); ?></a></li>
+                <li class="mobile-dropdown">
+                    <details>
+                        <summary><?php esc_html_e( 'Plantar Fasciitis Socks', 'brand-theme' ); ?></summary>
+                        <ul>
+                            <li><a href="<?php echo esc_url( $sock_category_url ); ?>"><?php esc_html_e( 'Shop All Socks', 'brand-theme' ); ?></a></li>
+                            <?php foreach ( $sock_menu_items as $sock ) : ?>
+                                <li><a href="<?php echo esc_url( $sock['url'] ); ?>"><?php echo esc_html( $sock['title'] ); ?></a></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </details>
+                </li>
                 <li><a href="<?php echo esc_url( $contact_url ); ?>"><?php esc_html_e( 'Contact Us', 'brand-theme' ); ?></a></li>
                 <li><a href="<?php echo esc_url( $tracking_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Tracking', 'brand-theme' ); ?></a></li>
                 <li class="mobile-dropdown">
                     <details>
                         <summary><?php esc_html_e( 'Legal', 'brand-theme' ); ?></summary>
                         <ul>
-                            <li><a href="<?php echo esc_url( $privacy_url ); ?>"><?php esc_html_e( 'Privacy Policy', 'brand-theme' ); ?></a></li>
                             <li><a href="<?php echo esc_url( $refund_url ); ?>"><?php esc_html_e( 'Refund Policy', 'brand-theme' ); ?></a></li>
-                            <li><a href="<?php echo esc_url( $terms_url ); ?>"><?php esc_html_e( 'Terms and Conditions', 'brand-theme' ); ?></a></li>
+                            <li><a href="<?php echo esc_url( $terms_url ); ?>"><?php esc_html_e( 'Terms of Service', 'brand-theme' ); ?></a></li>
                         </ul>
                     </details>
                 </li>

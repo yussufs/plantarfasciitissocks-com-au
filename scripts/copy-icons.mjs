@@ -17,7 +17,9 @@ const OUT = 'dist/icons';
 const ICONS = [
   'check',
   'chevron-down',
+  'droplets',
   'flame',
+  'heart-pulse',
   'help-circle',
   'package',
   'refresh-ccw',
@@ -25,6 +27,7 @@ const ICONS = [
   'shield-check',
   'shopping-cart',
   'star',
+  'target',
   'truck',
   'x',
 ];

@@ -1,7 +1,7 @@
 <script>
   /**
    * @type {{
-   *   tiers: Array<{qty: number, label: string, discount: number, badge: string}>,
+   *   tiers: Array<{qty: number, price: number, label: string, badge: string}>,
    *   unitPrice: number,
    *   currencySymbol: string,
    *   selectedIndex: number,
@@ -10,17 +10,24 @@
    */
   let { tiers = [], unitPrice = 0, currencySymbol = '$', selectedIndex = 0, onselect } = $props();
 
+  // Fixed bundle total for the tier.
   function tierPrice(tier) {
-    const discounted = unitPrice * (1 - tier.discount / 100);
-    return (discounted * tier.qty).toFixed(2);
+    return Number(tier.price).toFixed(2);
   }
 
   function tierUnitPrice(tier) {
-    return (unitPrice * (1 - tier.discount / 100)).toFixed(2);
+    return (Number(tier.price) / tier.qty).toFixed(2);
   }
 
+  // Saving vs buying the same quantity at the normal unit price.
   function savings(tier) {
-    return ((unitPrice * tier.qty) - parseFloat(tierPrice(tier))).toFixed(2);
+    return ((unitPrice * tier.qty) - Number(tier.price)).toFixed(2);
+  }
+
+  function percentOff(tier) {
+    const full = unitPrice * tier.qty;
+    if (full <= 0) return 0;
+    return Math.round((1 - Number(tier.price) / full) * 100);
   }
 </script>
 
@@ -44,8 +51,8 @@
       <span class="flex flex-1 items-center justify-between">
         <span>
           <span class="text-sm font-semibold text-zinc-900">{tier.label}</span>
-          {#if tier.discount > 0}
-            <span class="ml-1.5 text-xs font-bold text-brand-600">{tier.discount}% OFF</span>
+          {#if percentOff(tier) > 0}
+            <span class="ml-1.5 text-xs font-bold text-brand-600">{percentOff(tier)}% OFF</span>
           {/if}
         </span>
         <span class="text-right">
@@ -53,7 +60,7 @@
           {#if tier.qty > 1}
             <span class="block text-xs text-zinc-500">{currencySymbol}{tierUnitPrice(tier)} each</span>
           {/if}
-          {#if tier.discount > 0}
+          {#if savings(tier) > 0}
             <span class="block text-xs text-green-600">Save {currencySymbol}{savings(tier)}</span>
           {/if}
         </span>

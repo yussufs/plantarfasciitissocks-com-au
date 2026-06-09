@@ -12,14 +12,14 @@
 function brand_theme_handle_contact_form() {
     // Verify nonce.
     if ( ! isset( $_POST['brand_contact_nonce'] ) || ! wp_verify_nonce( $_POST['brand_contact_nonce'], 'brand_contact_form' ) ) {
-        wp_safe_redirect( wp_get_referer() ? wp_get_referer() : home_url( '/contact-us/' ) );
+        wp_safe_redirect( wp_get_referer() ? wp_get_referer() : home_url( '/contact/' ) );
         exit;
     }
 
     // Honeypot check — bots fill this hidden field.
     if ( ! empty( $_POST['website'] ) ) {
         // Silently reject but redirect as if successful to not tip off bots.
-        wp_safe_redirect( add_query_arg( 'contact', 'success', wp_get_referer() ? wp_get_referer() : home_url( '/contact-us/' ) ) );
+        wp_safe_redirect( add_query_arg( 'contact', 'success', wp_get_referer() ? wp_get_referer() : home_url( '/contact/' ) ) );
         exit;
     }
 
@@ -29,7 +29,7 @@ function brand_theme_handle_contact_form() {
 
     // Validate required fields.
     if ( ! $name || ! is_email( $email ) || ! $message ) {
-        wp_safe_redirect( add_query_arg( 'contact', 'error', wp_get_referer() ? wp_get_referer() : home_url( '/contact-us/' ) ) );
+        wp_safe_redirect( add_query_arg( 'contact', 'error', wp_get_referer() ? wp_get_referer() : home_url( '/contact/' ) ) );
         exit;
     }
 
@@ -49,7 +49,7 @@ function brand_theme_handle_contact_form() {
     $sent = wp_mail( $to, $subject, $body, $headers );
 
     $status = $sent ? 'success' : 'error';
-    wp_safe_redirect( add_query_arg( 'contact', $status, wp_get_referer() ? wp_get_referer() : home_url( '/contact-us/' ) ) );
+    wp_safe_redirect( add_query_arg( 'contact', $status, wp_get_referer() ? wp_get_referer() : home_url( '/contact/' ) ) );
     exit;
 }
 add_action( 'admin_post_nopriv_brand_contact_form', 'brand_theme_handle_contact_form' );
@@ -542,19 +542,11 @@ function brand_theme_get_product_svelte_data( $product ) {
         }
     }
 
-    // Bundle tiers.
-    $bundle_raw = get_post_meta( $product_id, '_brand_bundle_tiers', true );
-    $bundle_tiers = array();
-    if ( $bundle_raw ) {
-        $bundle_tiers = json_decode( $bundle_raw, true );
-    }
-    if ( empty( $bundle_tiers ) ) {
-        $bundle_tiers = array(
-            array( 'qty' => 1, 'label' => 'Buy 1',  'discount' => 0,  'badge' => '' ),
-            array( 'qty' => 2, 'label' => 'Buy 2',  'discount' => 10, 'badge' => 'Most Popular' ),
-            array( 'qty' => 4, 'label' => 'Buy 4',  'discount' => 20, 'badge' => 'Best Value' ),
-        );
-    }
+    // Bundle tiers — socks only for now. Fixed bundle prices (not %), enforced
+    // server-side as a negative cart fee (see brand_theme_apply_bundle_discount).
+    $bundle_tiers = has_term( 'plantar-fasciitis-socks', 'product_cat', $product_id )
+        ? brand_theme_sock_bundle_tiers()
+        : array();
 
     // Prices.
     $regular_price = (float) $product->get_regular_price();
@@ -562,6 +554,25 @@ function brand_theme_get_product_svelte_data( $product ) {
     $active_price  = $sale_price ?: $regular_price;
 
     $checkout_url = function_exists( 'wc_get_checkout_url' ) ? wc_get_checkout_url() : home_url( '/checkout/' );
+
+    // Size guide — only for plantar-fasciitis-socks products that have a size attribute.
+    $size_guide    = null;
+    $has_size_attr = false;
+    foreach ( array_keys( $select_attributes ) as $attr_name ) {
+        if ( stripos( $attr_name, 'size' ) !== false ) {
+            $has_size_attr = true;
+            break;
+        }
+    }
+    if ( $has_size_attr && has_term( 'plantar-fasciitis-socks', 'product_cat', $product_id ) ) {
+        $size_guide = array(
+            'image' => trailingslashit( wp_get_upload_dir()['baseurl'] ) . '2023/05/aussie-plantar-fasciitis-white-socks-size-guide.jpg',
+            'rows'  => array(
+                __( 'S/M fits Women: shoe size 6-9 and Men: shoe size 5-8', 'brand-theme' ),
+                __( 'L/XL fits Women: shoe size 9-13 and Men: shoe size 8-12', 'brand-theme' ),
+            ),
+        );
+    }
 
     return array(
         'productId'       => $product_id,
@@ -575,6 +586,7 @@ function brand_theme_get_product_svelte_data( $product ) {
         'variations'      => $variations,
         'colorAttributes'  => $color_attributes,
         'selectAttributes' => $select_attributes,
+        'sizeGuide'        => $size_guide,
         'bundleTiers'     => $bundle_tiers,
         'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
         'wcAjaxUrl'       => WC_AJAX::get_endpoint( '%%endpoint%%' ),
@@ -583,6 +595,110 @@ function brand_theme_get_product_svelte_data( $product ) {
         'nonce'           => wp_create_nonce( 'wc-product-' . $product_id ),
     );
 }
+
+// ──────────────────────────────────────────────
+// Sock Bundles
+//
+// WooCommerce can't apply a percentage discount to the cart without a coupon,
+// so bundle pricing is enforced as a negative cart fee. The fee is computed
+// entirely server-side from cart contents (never trusting client input), based
+// on the TOTAL quantity of socks in the cart — so mix-and-match across colours
+// and a quantity reached via several "add to cart" clicks both qualify.
+// ──────────────────────────────────────────────
+
+/**
+ * Sock bundle tiers — fixed total price per quantity (not a percentage).
+ *
+ * @return array<int, array{qty:int, price:float, label:string, badge:string}>
+ */
+function brand_theme_sock_bundle_tiers() {
+    return array(
+        array( 'qty' => 1, 'price' => 24.95, 'label' => 'Buy 1', 'badge' => '' ),
+        array( 'qty' => 2, 'price' => 45.00, 'label' => 'Buy 2', 'badge' => 'Most Popular' ),
+        array( 'qty' => 4, 'price' => 80.00, 'label' => 'Buy 4', 'badge' => 'Best Value' ),
+    );
+}
+
+/**
+ * Per-unit sock price for a given total quantity (the highest tier reached).
+ *
+ * qty 1 → $24.95, qty 2–3 → $22.50, qty 4+ → $20.00.
+ *
+ * @param int $qty Total sock quantity in the cart.
+ * @return float
+ */
+function brand_theme_sock_bundle_unit_price( $qty ) {
+    $tiers = brand_theme_sock_bundle_tiers();
+    $unit  = $tiers[0]['price'] / $tiers[0]['qty'];
+    foreach ( $tiers as $tier ) {
+        if ( $qty >= $tier['qty'] ) {
+            $unit = $tier['price'] / $tier['qty'];
+        }
+    }
+    return $unit;
+}
+
+/**
+ * Apply the sock bundle discount as a negative cart fee.
+ */
+function brand_theme_apply_bundle_discount( $cart ) {
+    if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
+        return;
+    }
+    if ( ! $cart || ! is_a( $cart, 'WC_Cart' ) ) {
+        return;
+    }
+
+    $sock_qty        = 0;
+    $sock_total_incl = 0.0; // Customer-facing (tax-inclusive) sock total.
+    $sock_total_excl = 0.0; // The same socks with tax removed.
+    $tax_class       = '';
+    $found           = false;
+
+    foreach ( $cart->get_cart() as $item ) {
+        $product = $item['data'] ?? null;
+        if ( ! $product ) {
+            continue;
+        }
+        $parent_id = $product->is_type( 'variation' ) ? $product->get_parent_id() : $product->get_id();
+        if ( ! has_term( 'plantar-fasciitis-socks', 'product_cat', $parent_id ) ) {
+            continue;
+        }
+        $qty              = (int) $item['quantity'];
+        $sock_qty        += $qty;
+        $sock_total_incl += (float) wc_get_price_including_tax( $product, array( 'qty' => $qty ) );
+        $sock_total_excl += (float) wc_get_price_excluding_tax( $product, array( 'qty' => $qty ) );
+        if ( ! $found ) {
+            $tax_class = $product->get_tax_class();
+            $found     = true;
+        }
+    }
+
+    if ( $sock_qty < 2 ) {
+        return; // No bundle discount for a single sock.
+    }
+
+    // Tiers are the customer-facing (tax-inclusive) prices, e.g. 4 socks for $80.
+    $bundle_total_incl = brand_theme_sock_bundle_unit_price( $sock_qty ) * $sock_qty;
+    $discount_incl     = round( $sock_total_incl - $bundle_total_incl, 2 );
+
+    if ( $discount_incl <= 0 ) {
+        return;
+    }
+
+    // WooCommerce treats fee amounts as tax-EXCLUSIVE. In a tax-inclusive store
+    // we therefore hand it the ex-tax discount as a TAXABLE fee, so the tax it
+    // adds back lands the cart on the exact bundle total (e.g. $80, not $78).
+    // The ratio comes from the actual prices, so it adapts to the customer's
+    // tax context and is 1:1 wherever no tax applies.
+    if ( wc_prices_include_tax() && $sock_total_incl > 0 ) {
+        $discount_excl = $discount_incl * ( $sock_total_excl / $sock_total_incl );
+        $cart->add_fee( __( 'Bundle discount', 'brand-theme' ), -1 * $discount_excl, true, $tax_class );
+    } else {
+        $cart->add_fee( __( 'Bundle discount', 'brand-theme' ), -1 * $discount_incl, false );
+    }
+}
+add_action( 'woocommerce_cart_calculate_fees', 'brand_theme_apply_bundle_discount' );
 
 // ──────────────────────────────────────────────
 // Product Meta Boxes
@@ -681,37 +797,125 @@ add_action( 'save_post_product', 'brand_theme_save_product_meta' );
 // ──────────────────────────────────────────────
 
 /**
- * Get reviews for a product by slug.
+ * Get approved reviews for a product, from native WooCommerce reviews (comments).
  *
- * Reads data/reviews.json once per request, filters by product slug.
- * A review with "*" in product_slugs matches all products.
+ * Maps each review comment plus its theme meta (image, featured, location) into
+ * the shape ProductReviews.svelte expects. Cached per product per request.
  *
- * @param string $product_slug The product slug to filter by.
- * @return array Filtered reviews.
+ * @param int|WC_Product $product Product ID or object.
+ * @return array
  */
-function brand_theme_get_reviews( $product_slug ) {
-	static $all_reviews = null;
+function brand_theme_get_reviews( $product ) {
+	$product_id = is_a( $product, 'WC_Product' ) ? $product->get_id() : intval( $product );
+	if ( ! $product_id ) {
+		return array();
+	}
 
-	if ( null === $all_reviews ) {
-		$file = get_template_directory() . '/data/reviews.json';
-		if ( ! file_exists( $file ) ) {
-			$all_reviews = array();
-			return $all_reviews;
+	static $cache = array();
+	if ( isset( $cache[ $product_id ] ) ) {
+		return $cache[ $product_id ];
+	}
+
+	$comments = get_comments( array(
+		'post_id' => $product_id,
+		'status'  => 'approve',
+		'parent'  => 0,
+		'order'   => 'DESC',
+		'orderby' => 'comment_date_gmt',
+	) );
+
+	$reviews = array();
+	foreach ( $comments as $comment ) {
+		// Skip pingbacks/trackbacks; keep reviews and plain comments.
+		if ( ! in_array( $comment->comment_type, array( 'review', 'comment', '' ), true ) ) {
+			continue;
 		}
-		$json        = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-		$all_reviews = json_decode( $json, true );
-		if ( ! is_array( $all_reviews ) ) {
-			$all_reviews = array();
+		$reviews[] = brand_theme_map_review_comment( $comment );
+	}
+
+	$cache[ $product_id ] = $reviews;
+	return $reviews;
+}
+
+/**
+ * Get featured reviews across ALL products, for a global testimonials section.
+ *
+ * A native review belongs to one product, so this surfaces standout reviews
+ * (flagged "featured" in the comment meta box) regardless of which product they
+ * were left on. Each result carries its source productId / productName.
+ *
+ * @param int $limit Max number to return (0 = no limit).
+ * @return array
+ */
+function brand_theme_get_featured_reviews( $limit = 0 ) {
+	$args = array(
+		'status'     => 'approve',
+		'parent'     => 0,
+		'post_type'  => 'product',
+		'meta_key'   => '_brand_review_featured', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		'meta_value' => '1',                       // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+		'order'      => 'DESC',
+		'orderby'    => 'comment_date_gmt',
+	);
+	if ( $limit > 0 ) {
+		$args['number'] = $limit;
+	}
+
+	$reviews = array();
+	foreach ( get_comments( $args ) as $comment ) {
+		if ( ! in_array( $comment->comment_type, array( 'review', 'comment', '' ), true ) ) {
+			continue;
+		}
+		$review                = brand_theme_map_review_comment( $comment );
+		$review['productId']   = intval( $comment->comment_post_ID );
+		$review['productName'] = get_the_title( $comment->comment_post_ID );
+		$reviews[]             = $review;
+	}
+
+	return $reviews;
+}
+
+/**
+ * Map a WooCommerce review comment + its theme meta into the front-end shape.
+ *
+ * `image` is returned as the raw meta value (attachment ID, URL, or legacy
+ * filename); the template resolves it via brand_theme_get_review_image_data().
+ *
+ * @param WP_Comment $comment
+ * @return array
+ */
+function brand_theme_map_review_comment( $comment ) {
+	$id     = intval( $comment->comment_ID );
+	$rating = intval( get_comment_meta( $id, 'rating', true ) );
+
+	// Photos are owned by the WooCommerce Photo Reviews plugin (VillaTheme),
+	// stored in `reviews-images` as a serialized array of image URLs. Resolve
+	// each through brand_theme_get_review_image_data() (URL passthrough).
+	$images   = array();
+	$img_meta = get_comment_meta( $id, 'reviews-images', true );
+	if ( ! empty( $img_meta ) ) {
+		foreach ( (array) maybe_unserialize( $img_meta ) as $img ) {
+			$data = brand_theme_get_review_image_data( $img );
+			if ( $data ) {
+				$images[] = $data;
+			}
 		}
 	}
 
-	return array_values( array_filter( $all_reviews, function ( $review ) use ( $product_slug ) {
-		if ( ! isset( $review['product_slugs'] ) || ! is_array( $review['product_slugs'] ) ) {
-			return false;
-		}
-		return in_array( '*', $review['product_slugs'], true )
-			|| in_array( $product_slug, $review['product_slugs'], true );
-	} ) );
+	return array(
+		'id'        => $id,
+		'author'    => $comment->comment_author ? $comment->comment_author : __( 'Anonymous', 'brand-theme' ),
+		'location'  => (string) get_comment_meta( $id, '_brand_review_location', true ), // theme meta
+		'rating'    => $rating > 0 ? $rating : 5,
+		'text'      => $comment->comment_content,
+		'images'    => $images,                  // all photos (plugin)
+		'image'     => $images[0] ?? null,       // back-compat: first photo
+		'verified'  => (bool) get_comment_meta( $id, 'verified', true ),
+		'votesUp'   => intval( get_comment_meta( $id, 'wcpr_vote_up_count', true ) ),
+		'votesDown' => intval( get_comment_meta( $id, 'wcpr_vote_down_count', true ) ),
+		'featured'  => '1' === get_comment_meta( $id, '_brand_review_featured', true ), // theme meta
+		'date'      => $comment->comment_date,
+	);
 }
 
 /**
@@ -726,6 +930,37 @@ function brand_theme_get_reviews( $product_slug ) {
 function brand_theme_get_review_image_data( $filename ) {
 	if ( ! $filename ) {
 		return null;
+	}
+
+	// Media-library attachment ID — the path used by native WooCommerce reviews
+	// (admin attaches the image, we store its ID). Resolve to the uploaded file
+	// with a responsive srcset; Smush optimises it in prod and pull-uploads.sh
+	// brings it down locally. WebP is left to Smush's transparent delivery.
+	if ( is_numeric( $filename ) ) {
+		$attachment_id = intval( $filename );
+		$full          = wp_get_attachment_image_src( $attachment_id, 'large' );
+		if ( ! $full ) {
+			return null;
+		}
+		return array(
+			'src'    => esc_url( $full[0] ),
+			'srcset' => (string) wp_get_attachment_image_srcset( $attachment_id, 'large' ),
+			'webp'   => '',
+			'alt'    => trim( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) ),
+		);
+	}
+
+	// Externally hosted image — if `image` is already an absolute (or
+	// protocol-relative) URL, use it verbatim and skip all local/Vite/dist
+	// resolution. No srcset/WebP since we don't control the remote variants;
+	// rely on the external host (e.g. a CDN) for sizing/format.
+	if ( preg_match( '#^(https?:)?//#i', $filename ) ) {
+		return array(
+			'src'    => esc_url( $filename ),
+			'srcset' => '',
+			'webp'   => '',
+			'alt'    => '',
+		);
 	}
 
 	$name_no_ext = pathinfo( $filename, PATHINFO_FILENAME );
@@ -792,4 +1027,74 @@ function brand_theme_get_review_image_data( $filename ) {
 		'webp'   => implode( ', ', $webp_parts ),
 		'alt'    => '',
 	);
+}
+
+/**
+ * ── Review meta box ─────────────────────────────────────────────────────────
+ * Adds the theme-level fields the WooCommerce Photo Reviews plugin doesn't
+ * provide — a Featured flag and a Location — to the comment edit screen for
+ * product reviews. Photos, rating and votes are owned by the plugin.
+ */
+
+add_action( 'add_meta_boxes_comment', 'brand_theme_add_review_meta_box' );
+function brand_theme_add_review_meta_box( $comment ) {
+	if ( 'product' !== get_post_type( $comment->comment_post_ID ) ) {
+		return;
+	}
+	add_meta_box(
+		'brand-review-meta',
+		__( 'Review Details (Theme)', 'brand-theme' ),
+		'brand_theme_render_review_meta_box',
+		'comment',
+		'normal',
+		'high'
+	);
+}
+
+function brand_theme_render_review_meta_box( $comment ) {
+	wp_nonce_field( 'brand_review_meta', 'brand_review_meta_nonce' );
+
+	$featured = get_comment_meta( $comment->comment_ID, '_brand_review_featured', true );
+	$location = get_comment_meta( $comment->comment_ID, '_brand_review_location', true );
+	?>
+	<p>
+		<label>
+			<input type="checkbox" name="brand_review_featured" value="1" <?php checked( '1', $featured ); ?> />
+			<strong><?php esc_html_e( 'Featured', 'brand-theme' ); ?></strong>
+			— <?php esc_html_e( 'show in featured / testimonials sections (across products)', 'brand-theme' ); ?>
+		</label>
+	</p>
+	<p>
+		<label for="brand_review_location"><strong><?php esc_html_e( 'Location', 'brand-theme' ); ?></strong></label><br>
+		<input type="text" id="brand_review_location" name="brand_review_location"
+			value="<?php echo esc_attr( $location ); ?>" class="widefat" placeholder="e.g. Sydney, NSW" />
+	</p>
+	<p class="description">
+		<?php esc_html_e( 'Review photos, rating and votes are managed by the WooCommerce Photo Reviews plugin.', 'brand-theme' ); ?>
+	</p>
+	<?php
+}
+
+add_action( 'edit_comment', 'brand_theme_save_review_meta' );
+function brand_theme_save_review_meta( $comment_id ) {
+	if ( ! isset( $_POST['brand_review_meta_nonce'] ) ||
+		! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['brand_review_meta_nonce'] ) ), 'brand_review_meta' ) ) {
+		return;
+	}
+	if ( ! current_user_can( 'edit_comment', $comment_id ) ) {
+		return;
+	}
+
+	if ( ! empty( $_POST['brand_review_featured'] ) ) {
+		update_comment_meta( $comment_id, '_brand_review_featured', '1' );
+	} else {
+		delete_comment_meta( $comment_id, '_brand_review_featured' );
+	}
+
+	$location = isset( $_POST['brand_review_location'] ) ? sanitize_text_field( wp_unslash( $_POST['brand_review_location'] ) ) : '';
+	if ( '' !== $location ) {
+		update_comment_meta( $comment_id, '_brand_review_location', $location );
+	} else {
+		delete_comment_meta( $comment_id, '_brand_review_location' );
+	}
 }

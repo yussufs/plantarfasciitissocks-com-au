@@ -8,27 +8,16 @@
 $footer_domain  = wp_parse_url( home_url(), PHP_URL_HOST );
 $footer_email   = 'support@' . $footer_domain;
 
-$footer_contact_page = get_page_by_path( 'contact-us' );
-$footer_contact_url  = $footer_contact_page ? get_permalink( $footer_contact_page ) : home_url( '/contact-us/' );
+$footer_contact_page = get_page_by_path( 'contact' );
+$footer_contact_url  = $footer_contact_page ? get_permalink( $footer_contact_page ) : home_url( '/contact/' );
 
 $footer_tracking_url = 'https://auspost.com.au/mypost/track/search';
-
-$footer_privacy_url = get_privacy_policy_url();
-if ( ! $footer_privacy_url ) {
-	$footer_privacy_url = home_url( '/privacy-policy/' );
-}
 
 $footer_refund_page = get_page_by_path( 'refund-policy' );
 $footer_refund_url  = $footer_refund_page ? get_permalink( $footer_refund_page ) : home_url( '/refund-policy/' );
 
-$footer_terms_id = 0;
-if ( function_exists( 'wc_terms_and_conditions_page_id' ) ) {
-	$footer_terms_id = (int) wc_terms_and_conditions_page_id();
-}
-if ( ! $footer_terms_id ) {
-	$footer_terms_id = (int) get_option( 'woocommerce_terms_page_id' );
-}
-$footer_terms_url = $footer_terms_id ? get_permalink( $footer_terms_id ) : home_url( '/terms/' );
+$footer_terms_page = get_page_by_path( 'terms-of-service' );
+$footer_terms_url  = $footer_terms_page ? get_permalink( $footer_terms_page ) : home_url( '/terms-of-service/' );
 ?>
 
 <footer class="mt-auto bg-brand-600 text-white">
@@ -36,8 +25,8 @@ $footer_terms_url = $footer_terms_id ? get_permalink( $footer_terms_id ) : home_
 		<div class="grid gap-10 md:grid-cols-3">
 			<!-- Brand info -->
 			<div class="md:col-span-2 space-y-4">
-				<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="inline-block text-2xl font-extrabold text-white no-underline">
-					<?php bloginfo( 'name' ); ?>
+				<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="inline-block text-white no-underline" aria-label="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
+					<?php get_template_part( 'template-parts/logo', null, array( 'class' => 'h-10 w-auto' ) ); ?>
 				</a>
 
 				<?php
@@ -69,9 +58,8 @@ $footer_terms_url = $footer_terms_id ? get_permalink( $footer_terms_id ) : home_
 				<ul class="mt-4 space-y-2 text-sm">
 					<li><a href="<?php echo esc_url( $footer_contact_url ); ?>" class="text-brand-100 hover:text-white no-underline"><?php esc_html_e( 'Contact Us', 'brand-theme' ); ?></a></li>
 					<li><a href="<?php echo esc_url( $footer_tracking_url ); ?>" target="_blank" rel="noopener noreferrer" class="text-brand-100 hover:text-white no-underline"><?php esc_html_e( 'Track Your Order', 'brand-theme' ); ?></a></li>
-					<li><a href="<?php echo esc_url( $footer_privacy_url ); ?>" class="text-brand-100 hover:text-white no-underline"><?php esc_html_e( 'Privacy Policy', 'brand-theme' ); ?></a></li>
 					<li><a href="<?php echo esc_url( $footer_refund_url ); ?>" class="text-brand-100 hover:text-white no-underline"><?php esc_html_e( 'Refund Policy', 'brand-theme' ); ?></a></li>
-					<li><a href="<?php echo esc_url( $footer_terms_url ); ?>" class="text-brand-100 hover:text-white no-underline"><?php esc_html_e( 'Terms and Conditions', 'brand-theme' ); ?></a></li>
+					<li><a href="<?php echo esc_url( $footer_terms_url ); ?>" class="text-brand-100 hover:text-white no-underline"><?php esc_html_e( 'Terms of Service', 'brand-theme' ); ?></a></li>
 				</ul>
 			</div>
 		</div>

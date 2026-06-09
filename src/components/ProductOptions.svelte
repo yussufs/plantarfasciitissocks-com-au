@@ -33,6 +33,7 @@
     variations = [],
     colorAttributes = {},
     selectAttributes = {},
+    sizeGuide = null,
     bundleTiers = [],
     wcAjaxUrl = '',
     cartUrl = '',
@@ -43,6 +44,23 @@
   let selectedBundleIndex = $state(0);
   let selectedAttributes = $state({});
   let isAddingToCart = $state(false);
+  let showSizeGuide = $state(false);
+
+  const isSizeAttr = (name) => /size/i.test(name);
+
+  // Close the size guide on Escape and lock body scroll while it's open.
+  $effect(() => {
+    if (!showSizeGuide) return;
+    function onKeydown(e) {
+      if (e.key === 'Escape') showSizeGuide = false;
+    }
+    window.addEventListener('keydown', onKeydown);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKeydown);
+      document.body.style.overflow = '';
+    };
+  });
   let cartMessage = $state('');
   let cartMessageType = $state('success');
 
@@ -88,23 +106,31 @@
 
   let hasDiscount = $derived(currentUnitPrice < currentRegularPrice);
 
-  // Bundle calculations.
-  let selectedTier = $derived(bundleTiers[selectedBundleIndex] || bundleTiers[0]);
+  // Products with bundle tiers (socks) show the bundle picker; everything else
+  // shows a plain quantity stepper.
+  let hasBundles = $derived(bundleTiers.length > 1);
+  let selectedTier = $derived(hasBundles ? (bundleTiers[selectedBundleIndex] || bundleTiers[0]) : null);
 
-  let bundleUnitPrice = $derived(
-    currentUnitPrice * (1 - (selectedTier?.discount || 0) / 100)
-  );
+  // Quantity for non-bundle products.
+  let quantity = $state(1);
 
+  let effectiveQty = $derived(hasBundles ? (selectedTier?.qty || 1) : quantity);
+
+  // Fixed bundle total when a tier is selected; otherwise unit price × quantity.
   let totalPrice = $derived(
-    (bundleUnitPrice * (selectedTier?.qty || 1)).toFixed(2)
+    (hasBundles && selectedTier
+      ? Number(selectedTier.price)
+      : currentUnitPrice * effectiveQty
+    ).toFixed(2)
   );
 
+  // Strikethrough = same quantity at the regular list price.
   let totalComparePrice = $derived(
-    (currentRegularPrice * (selectedTier?.qty || 1)).toFixed(2)
+    (currentRegularPrice * effectiveQty).toFixed(2)
   );
 
   let showCompare = $derived(
-    hasDiscount || (selectedTier?.discount || 0) > 0
+    Number(totalComparePrice) > Number(totalPrice)
   );
 
   // Dispatch variation change event when attributes change.
@@ -131,7 +157,7 @@
   async function addToCart(redirect = false) {
     if (isAddingToCart) return;
 
-    const qty = selectedTier?.qty || 1;
+    const qty = Math.max(1, parseInt(effectiveQty, 10) || 1);
     const variationId = matchedVariation?.id || 0;
 
     // For variable products, a variation must be selected.
@@ -182,7 +208,7 @@
 
       // Dispatch event for the cart drawer
       window.dispatchEvent(new CustomEvent('cart:item-added', {
-        detail: { productName: name, qty: selectedTier?.qty || 1 },
+        detail: { productName: name, qty },
       }));
     } catch {
       cartMessage = 'Something went wrong. Please try again.';
@@ -219,18 +245,47 @@
       {options}
       selected={selectedAttributes[attrName] || ''}
       onselect={(slug) => selectAttribute(attrName, slug)}
+      onSizeGuide={sizeGuide && isSizeAttr(attrName) ? () => (showSizeGuide = true) : null}
     />
   {/each}
 
-  <!-- Bundle selector -->
-  {#if bundleTiers.length > 1}
+  <!-- Bundle selector (socks) or quantity stepper (everything else) -->
+  {#if hasBundles}
     <BundleSelector
       tiers={bundleTiers}
       unitPrice={currentUnitPrice}
       {currencySymbol}
-      {selectedBundleIndex}
+      selectedIndex={selectedBundleIndex}
       onselect={(i) => { selectedBundleIndex = i; }}
     />
+  {:else}
+    <div>
+      <p class="mb-2 text-sm font-medium text-zinc-700">Quantity</p>
+      <div class="inline-flex items-center rounded-md border border-zinc-300">
+        <button
+          type="button"
+          class="flex h-10 w-10 items-center justify-center text-lg text-zinc-700 hover:bg-zinc-100 disabled:opacity-40"
+          onclick={() => (quantity = Math.max(1, quantity - 1))}
+          disabled={quantity <= 1}
+          aria-label="Decrease quantity"
+        >&minus;</button>
+        <input
+          type="number"
+          min="1"
+          inputmode="numeric"
+          class="h-10 w-14 border-x border-zinc-300 text-center text-sm font-medium text-zinc-900 focus:outline-none"
+          bind:value={quantity}
+          onchange={() => { quantity = Math.max(1, parseInt(quantity, 10) || 1); }}
+          aria-label="Quantity"
+        />
+        <button
+          type="button"
+          class="flex h-10 w-10 items-center justify-center text-lg text-zinc-700 hover:bg-zinc-100"
+          onclick={() => (quantity = (parseInt(quantity, 10) || 0) + 1)}
+          aria-label="Increase quantity"
+        >+</button>
+      </div>
+    </div>
   {/if}
 
   <!-- CTA buttons -->
@@ -266,6 +321,44 @@
           <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
         </svg>
         <span class="text-sm font-medium">{cartMessage}</span>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Size guide modal -->
+  {#if showSizeGuide && sizeGuide}
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Size guide"
+      tabindex="-1"
+      onclick={() => (showSizeGuide = false)}
+      onkeydown={(e) => { if (e.key === 'Escape') showSizeGuide = false; }}
+    >
+      <div
+        class="relative max-h-[90vh] w-full max-w-lg overflow-auto rounded-xl bg-white p-4 shadow-xl sm:p-6"
+        role="document"
+        onclick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          class="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-zinc-600 transition-colors hover:bg-zinc-200"
+          onclick={() => (showSizeGuide = false)}
+          aria-label="Close size guide"
+        >
+          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+
+        <h2 class="mb-3 pr-8 text-lg font-bold text-zinc-900">Size Guide</h2>
+        <img src={sizeGuide.image} alt="Size guide" class="w-full rounded-lg" />
+        <div class="mt-4 space-y-1.5 text-sm text-zinc-700">
+          {#each sizeGuide.rows as row}
+            <p>{row}</p>
+          {/each}
+        </div>
       </div>
     </div>
   {/if}

@@ -208,49 +208,36 @@ No post meta, no conditionals — just a file naming convention.
 
 ## Reviews
 
-Reviews are **not** WooCommerce comments. They live in a static JSON file checked into the repo.
+Reviews are **native WooCommerce reviews** (WP comments on products), collected and managed by the **WooCommerce Photo Reviews plugin (VillaTheme)** — photo uploads, review-request emails, voting, and bulk management all live in the plugin. The theme **does not render the plugin's widget/shortcodes**; it reads the plugin's stored meta and renders its own design via `ProductReviews.svelte`. Reviews come down with `pull-db.sh`; their photos sync with `pull-uploads.sh`.
 
-### Data file
+### Comment meta
 
-`data/reviews.json` — array of review objects:
+Owned by the **plugin** (read-only from the theme's perspective):
 
-```json
-{
-  "id": 1,
-  "author": "Sarah M.",
-  "location": "Sydney, NSW",
-  "rating": 5,
-  "text": "Great product, highly recommend!",
-  "image": "review-sarah.jpg",
-  "product_slugs": ["*"],
-  "featured": true,
-  "date": "2025-11-15T00:00:00+11:00"
-}
-```
+| Meta key | Value | Description |
+|---|---|---|
+| `rating` | int 1–5 | Native WooCommerce rating |
+| `reviews-images` | serialized array of URLs | Review photos (`a:1:{i:0;s:..:"…/uploads/…jpg";}`) |
+| `verified` | truthy | Verified-owner flag |
+| `wcpr_vote_up_count` / `wcpr_vote_down_count` | int | Helpful / unhelpful tallies |
 
-- `product_slugs` — array of WooCommerce product slugs this review appears on. Use `["*"]` for all products.
-- `image` — filename in `src/images/reviews/`. Served via Vite in dev, built to `dist/images/reviews/` in production.
-- `featured` — highlighted in the review grid.
+Added by the **theme** (the plugin doesn't provide these), via the **"Review Details (Theme)" meta box** on the comment edit screen:
+
+| Meta key | Value | Description |
+|---|---|---|
+| `_brand_review_featured` | `'1'` | Show in featured / testimonials sections |
+| `_brand_review_location` | string | e.g. `Sydney, NSW` |
 
 ### How it works
 
-1. **PHP helper** `brand_theme_get_reviews($product_slug)` in `functions.php` reads `data/reviews.json` and filters by product slug (cached per request).
-2. **Template part** `template-parts/content/single-product/reviews.php` builds the config (reviews, avg rating, count) and renders the mount point + JSON-LD structured data for SEO.
-3. **Svelte component** `ProductReviews.svelte` displays the review grid with lightbox for images.
-
-### Adding a review
-
-1. Add an entry to `data/reviews.json`.
-2. If the review has an image, place it in `src/images/reviews/` (and optionally provide 400w/800w variants + WebP).
-3. Set `product_slugs` to the relevant product slugs, or `["*"]` for all products.
-4. The review will appear automatically on matching product pages.
+1. **PHP helper** `brand_theme_get_reviews($product)` in `functions.php` queries approved review comments and maps each via `brand_theme_map_review_comment()` into the front-end shape — including `images[]` (from `reviews-images`), `verified`, `votesUp`/`votesDown`, plus theme `featured`/`location`. Cached per product per request.
+2. **Cross-product** `brand_theme_get_featured_reviews($limit)` returns featured reviews across **all** products (for a global testimonials section); each carries its source `productId` / `productName`.
+3. **Template part** `template-parts/content/single-product/reviews.php` builds the config (reviews, avg rating from `$product->get_average_rating()`, count) and renders the mount point. **Schema is emitted by Rank Math** — the theme outputs no JSON-LD (avoids duplicate-schema warnings).
+4. **Svelte component** `ProductReviews.svelte` renders the design (the part we control). The plugin's own front-end display should be disabled in its settings so it doesn't double-render.
 
 ### Review images
 
-`brand_theme_get_review_image_data($filename)` in `functions.php` builds responsive image data:
-
-- **Dev mode**: served from `http://localhost:5173/src/images/reviews/`
-- **Production**: served from `dist/images/reviews/` with srcset (400w/800w) and WebP variants
+`brand_theme_get_review_image_data($value)` resolves each entry in three modes: **full URL** (the plugin's case — used verbatim), **attachment ID** (media-library file with responsive `srcset`), or **bare filename** (legacy `src/images/reviews/` via Vite/dist). Each review's `images[]` is an array (photo reviews can have multiple).
 
 ## WooCommerce Template Overrides
 
@@ -298,6 +285,7 @@ Only override what you need. WooCommerce will flag outdated overrides in wp-admi
 |---|---|---|
 | `setup-local.sh` | `./scripts/setup-local.sh brand-name` | Create local WordPress dev environment |
 | `pull-db.sh` | `./scripts/pull-db.sh` | Pull production DB to local, run search-replace |
+| `pull-uploads.sh` | `./scripts/pull-uploads.sh` | Rsync production `wp-content/uploads` (media/product images) to local |
 | `seed-products.sh` | `./scripts/seed-products.sh brand-name --count 12` | Seed dummy WooCommerce products/categories for local theme previews |
 | `init-production.sh` | `./scripts/init-production.sh brand-name domain.com` | Configure fresh Hostinger WordPress install |
 | `config.example.sh` | Copy to `config.sh` | Configuration template (gitignored) |

@@ -58,50 +58,39 @@ while ( have_posts() ) :
     $faqs_raw = get_post_meta( $product->get_id(), '_brand_faqs', true );
     $faqs     = $faqs_raw ? json_decode( $faqs_raw, true ) : null;
 
-    // Review count (WooCommerce native).
-    $review_count = $product->get_review_count();
-    $avg_rating   = $product->get_average_rating();
-
-    // Static reviews from data/reviews.json.
-    $static_reviews     = brand_theme_get_reviews( $product->get_slug() );
-    $static_review_count = count( $static_reviews );
-    $static_avg_rating   = 0;
-    if ( $static_review_count > 0 ) {
-        $total = 0;
-        foreach ( $static_reviews as $sr ) {
-            $total += intval( $sr['rating'] ?? 5 );
-        }
-        $static_avg_rating = round( $total / $static_review_count, 1 );
-    }
+    // Review rating/count from WooCommerce (native reviews, managed by the
+    // WooCommerce Photo Reviews plugin).
+    $review_count = (int) $product->get_review_count();
+    $avg_rating   = (float) $product->get_average_rating();
     ?>
 
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-12">
         <!-- Gallery Column -->
-        <div class="lg:sticky lg:top-8 lg:self-start">
+        <div class="min-w-0 lg:sticky lg:top-8 lg:self-start">
             <div id="product-gallery" data-config='<?php echo esc_attr( wp_json_encode( array(
                 'images' => $svelte_data['images'],
             ) ) ); ?>'></div>
         </div>
 
         <!-- Details Column -->
-        <div class="space-y-3 lg:space-y-5">
+        <div class="min-w-0 space-y-3 lg:space-y-5">
             <?php get_template_part( 'template-parts/content/single-product/product-badge' ); ?>
 
             <h1 class="product-title"><?php the_title(); ?></h1>
 
-            <?php if ( $static_review_count > 0 ) : ?>
+            <?php if ( $review_count > 0 ) : ?>
                 <a href="#product-reviews" class="inline-flex items-center gap-1.5 group no-underline">
                     <span class="flex gap-0.5">
                         <?php for ( $i = 1; $i <= 5; $i++ ) :
-                            if ( $i <= floor( $static_avg_rating ) ) :
+                            if ( $i <= floor( $avg_rating ) ) :
                                 brand_theme_icon( 'star', array( 'class' => 'w-4 h-4 text-amber-400 fill-amber-400' ) );
                             else :
                                 brand_theme_icon( 'star', array( 'class' => 'w-4 h-4 text-zinc-300' ) );
                             endif;
                         endfor; ?>
                     </span>
-                    <span class="text-sm font-medium text-zinc-700"><?php echo esc_html( number_format( $static_avg_rating, 1 ) ); ?></span>
-                    <span class="text-sm text-zinc-500 group-hover:text-zinc-700 transition-colors">(<?php echo esc_html( $static_review_count ); ?> <?php echo esc_html( $static_review_count === 1 ? 'review' : 'reviews' ); ?>)</span>
+                    <span class="text-sm font-medium text-zinc-700"><?php echo esc_html( number_format( $avg_rating, 1 ) ); ?></span>
+                    <span class="text-sm text-zinc-500 group-hover:text-zinc-700 transition-colors">(<?php echo esc_html( $review_count ); ?> <?php echo esc_html( 1 === $review_count ? 'review' : 'reviews' ); ?>)</span>
                 </a>
             <?php endif; ?>
 
@@ -112,14 +101,6 @@ while ( have_posts() ) :
                     <span class="product-price-compare"><?php echo wp_kses_post( wc_price( $product->get_regular_price() ) ); ?></span>
                 <?php else : ?>
                     <span class="product-price"><?php echo wp_kses_post( wc_price( $product->get_regular_price() ) ); ?></span>
-                <?php endif; ?>
-
-                <?php if ( $review_count > 0 ) : ?>
-                    <span class="product-rating ml-2">
-                        <?php brand_theme_icon( 'star', array( 'class' => 'product-rating-star fill-current' ) ); ?>
-                        <span class="text-sm font-medium text-zinc-700"><?php echo esc_html( number_format( (float) $avg_rating, 1 ) ); ?></span>
-                        <span class="text-sm text-zinc-400">(<?php echo esc_html( $review_count ); ?>)</span>
-                    </span>
                 <?php endif; ?>
             </div>
 
@@ -156,6 +137,8 @@ while ( have_posts() ) :
             endif; ?>
         </div>
     </div>
+
+    <?php get_template_part( 'template-parts/content/single-product/description' ); ?>
 
     <?php get_template_part( 'template-parts/content/single-product/reviews' ); ?>
 
