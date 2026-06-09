@@ -33,6 +33,19 @@
     @apply border border-gray-300 bg-white text-gray-700 hover:bg-gray-50;
   }
 
+  /* Offer / landing page call-to-action button. */
+  .offer-cta {
+    @apply inline-flex items-center justify-center gap-1 rounded-lg bg-brand-600 px-8 py-4 text-base font-bold uppercase tracking-wide text-white no-underline shadow-sm transition-colors hover:bg-brand-700;
+  }
+
+  .offer-cta--block {
+    @apply w-full;
+  }
+
+  .offer-decline {
+    @apply block text-xs text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-700;
+  }
+
   .announcement-bar {
     @apply bg-brand-600 py-2 text-center text-sm font-extrabold uppercase tracking-[0.08em] text-white;
   }
