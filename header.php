@@ -70,7 +70,6 @@ if ( post_type_exists( 'product' ) ) {
 
 // Plantar fasciitis socks shown in the header mega-menu.
 $sock_category_url = home_url( '/product-category/plantar-fasciitis-socks/' );
-$header_uploads    = trailingslashit( wp_get_upload_dir()['baseurl'] );
 $sock_menu_items   = array(
     array(
         'title' => __( 'Black Socks', 'brand-theme' ),
@@ -112,7 +111,10 @@ $sock_menu_items   = array(
                                     <a class="site-megamenu-card" href="<?php echo esc_url( $sock['url'] ); ?>">
                                         <span class="site-megamenu-title"><?php echo esc_html( $sock['title'] ); ?></span>
                                         <span class="site-megamenu-image">
-                                            <img src="<?php echo esc_url( $header_uploads . $sock['image'] ); ?>" alt="<?php echo esc_attr( $sock['title'] ); ?>" loading="lazy" />
+                                            <?php
+                                            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper returns escaped markup.
+                                            echo brand_theme_uploads_image( $sock['image'], $sock['title'], '', 'medium' );
+                                            ?>
                                         </span>
                                     </a>
                                 <?php endforeach; ?>

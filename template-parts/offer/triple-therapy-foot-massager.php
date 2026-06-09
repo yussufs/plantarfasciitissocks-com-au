@@ -24,6 +24,13 @@ $offer_video = static function ( $file ) use ( $uploads ) {
 		esc_url( $uploads . $file )
 	);
 };
+
+// Render an uploads image through the media library so Smush CDN (and
+// srcset/WebP) applies. Delegates to the shared theme helper.
+$offer_image = static function ( $file, $alt, $class ) {
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper returns escaped markup.
+	echo brand_theme_uploads_image( $file, $alt, $class );
+};
 ?>
 
 <main class="offer-page">
@@ -100,12 +107,7 @@ $offer_video = static function ( $file ) use ( $uploads ) {
 			<!-- Black -->
 			<div class="flex flex-col rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-zinc-200">
 				<h3 class="text-xl font-bold text-zinc-900"><?php esc_html_e( 'Get 50% OFF The Black Version', 'brand-theme' ); ?></h3>
-				<img
-					class="mx-auto mt-4 aspect-square w-full max-w-sm rounded-xl object-cover"
-					src="<?php echo esc_url( $uploads . '2026/05/Triple-Therapy-Foot-Massager-Black-OG-scaled.jpg' ); ?>"
-					alt="<?php esc_attr_e( 'Triple Therapy Foot Massager — Black', 'brand-theme' ); ?>"
-					loading="lazy"
-				>
+				<?php $offer_image( '2026/05/Triple-Therapy-Foot-Massager-Black-OG-scaled.jpg', __( 'Triple Therapy Foot Massager — Black', 'brand-theme' ), 'mx-auto mt-4 aspect-square w-full max-w-sm rounded-xl object-cover' ); ?>
 				<a href="<?php echo esc_url( $accept_black ); ?>" class="offer-cta offer-cta--block mt-6">
 					<?php esc_html_e( 'Add The Black One To My Order — $49', 'brand-theme' ); ?>
 				</a>
@@ -116,12 +118,7 @@ $offer_video = static function ( $file ) use ( $uploads ) {
 			<!-- Gray -->
 			<div class="flex flex-col rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-zinc-200">
 				<h3 class="text-xl font-bold text-zinc-900"><?php esc_html_e( 'Get 50% OFF The Gray Version', 'brand-theme' ); ?></h3>
-				<img
-					class="mx-auto mt-4 aspect-square w-full max-w-sm rounded-xl object-cover"
-					src="<?php echo esc_url( $uploads . '2026/05/Triple-Therapy-Foot-Massager-Grey-OG-scaled.jpg' ); ?>"
-					alt="<?php esc_attr_e( 'Triple Therapy Foot Massager — Grey', 'brand-theme' ); ?>"
-					loading="lazy"
-				>
+				<?php $offer_image( '2026/05/Triple-Therapy-Foot-Massager-Grey-OG-scaled.jpg', __( 'Triple Therapy Foot Massager — Grey', 'brand-theme' ), 'mx-auto mt-4 aspect-square w-full max-w-sm rounded-xl object-cover' ); ?>
 				<a href="<?php echo esc_url( $accept_gray ); ?>" class="offer-cta offer-cta--block mt-6">
 					<?php esc_html_e( 'Add The Gray One To My Order — $49', 'brand-theme' ); ?>
 				</a>

@@ -265,6 +265,111 @@ function brand_theme_image_url( $filename ) {
 }
 
 /**
+ * Render an image from the WordPress media library (uploads) as an <img>,
+ * resolved to its attachment so Smush CDN, srcset and WebP all apply.
+ *
+ * Use this instead of a raw <img src="…/wp-content/uploads/…"> — raw tags
+ * bypass WooCommerce/Smush image filters and never hit the CDN. Falls back to a
+ * plain <img> if the file isn't a media-library attachment.
+ *
+ * @param string $path  Path within uploads, e.g. '2026/05/foo.jpg'.
+ * @param string $alt   Alt text.
+ * @param string $class CSS classes for the <img>.
+ * @param string $size  Registered image size (default 'large').
+ * @param array  $attr  Extra/override <img> attributes (e.g. loading, fetchpriority).
+ * @return string HTML <img> markup.
+ */
+function brand_theme_uploads_image( $path, $alt = '', $class = '', $size = 'large', $attr = array() ) {
+	$url = trailingslashit( wp_get_upload_dir()['baseurl'] ) . ltrim( $path, '/' );
+	$id  = attachment_url_to_postid( $url );
+
+	if ( $id ) {
+		return wp_get_attachment_image( $id, $size, false, array_merge( array(
+			'class'   => $class,
+			'alt'     => $alt,
+			'loading' => 'lazy',
+		), $attr ) );
+	}
+
+	// Fallback: file isn't a media-library attachment — output a plain tag.
+	$extra = '';
+	foreach ( $attr as $key => $value ) {
+		$extra .= sprintf( ' %s="%s"', esc_attr( $key ), esc_attr( $value ) );
+	}
+	if ( ! isset( $attr['loading'] ) ) {
+		$extra .= ' loading="lazy"';
+	}
+
+	return sprintf(
+		'<img class="%s" src="%s" alt="%s"%s>',
+		esc_attr( $class ),
+		esc_url( $url ),
+		esc_attr( $alt ),
+		$extra // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attributes escaped above.
+	);
+}
+
+/**
+ * Convert a local media URL to its Smush Pro CDN URL.
+ *
+ * Smush's CDN rewrites <img> tags in the server-rendered page HTML, so it can't
+ * reach images that Svelte renders client-side from a data-config JSON blob
+ * (product gallery, reviews, size guide). For those we ask Smush to build the
+ * CDN URL directly. No-op (returns the origin URL) when Smush/CDN is inactive.
+ *
+ * @param string $url
+ * @return string
+ */
+function brand_theme_cdn_url( $url ) {
+	if ( empty( $url ) || ! is_string( $url ) ) {
+		return $url;
+	}
+
+	// Smush Pro 3.12+ — CDN_Helper singleton.
+	if ( class_exists( '\Smush\Core\CDN\CDN_Helper' ) ) {
+		$helper = \Smush\Core\CDN\CDN_Helper::get_instance();
+		if ( $helper && method_exists( $helper, 'is_cdn_active' ) && $helper->is_cdn_active() ) {
+			return $helper->generate_cdn_url( $url );
+		}
+	}
+
+	// Older Smush Pro — CDN module on the core object.
+	if ( class_exists( 'WP_Smush' ) ) {
+		$smush = WP_Smush::get_instance();
+		if ( $smush && method_exists( $smush, 'core' ) ) {
+			$core = $smush->core();
+			if ( ! empty( $core->mod->cdn ) && method_exists( $core->mod->cdn, 'generate_cdn_url' ) ) {
+				return $core->mod->cdn->generate_cdn_url( $url );
+			}
+		}
+	}
+
+	return $url;
+}
+
+/**
+ * Run every URL in a srcset string through brand_theme_cdn_url().
+ *
+ * @param string $srcset
+ * @return string
+ */
+function brand_theme_cdn_srcset( $srcset ) {
+	if ( empty( $srcset ) ) {
+		return $srcset;
+	}
+	$sources = array_map( 'trim', explode( ',', $srcset ) );
+	foreach ( $sources as &$source ) {
+		$parts = preg_split( '/\s+/', $source, 2 );
+		if ( ! empty( $parts[0] ) ) {
+			$parts[0] = brand_theme_cdn_url( $parts[0] );
+			$source   = implode( ' ', $parts );
+		}
+	}
+	unset( $source );
+	return implode( ', ', $sources );
+}
+
+/**
  * Output a responsive <picture> tag with WebP + srcset.
  *
  * For raster images (jpg/png), generates srcset at 400, 800, 1200, 1600w
@@ -465,8 +570,8 @@ function brand_theme_get_product_svelte_data( $product ) {
         if ( $full ) {
             $images[] = array(
                 'id'    => $img_id,
-                'src'   => $full,
-                'thumb' => $thumb ?: $full,
+                'src'   => brand_theme_cdn_url( $full ),
+                'thumb' => brand_theme_cdn_url( $thumb ?: $full ),
                 'alt'   => $alt ?: $product->get_name(),
             );
         }
@@ -490,8 +595,8 @@ function brand_theme_get_product_svelte_data( $product ) {
             $var_image = null;
             if ( ! empty( $var['image']['url'] ) ) {
                 $var_image = array(
-                    'src'   => $var['image']['url'],
-                    'thumb' => $var['image']['gallery_thumbnail_url'] ?? $var['image']['url'],
+                    'src'   => brand_theme_cdn_url( $var['image']['url'] ),
+                    'thumb' => brand_theme_cdn_url( $var['image']['gallery_thumbnail_url'] ?? $var['image']['url'] ),
                     'alt'   => $var['image']['alt'] ?? $product->get_name(),
                 );
             }
@@ -565,8 +670,19 @@ function brand_theme_get_product_svelte_data( $product ) {
         }
     }
     if ( $has_size_attr && has_term( 'plantar-fasciitis-socks', 'product_cat', $product_id ) ) {
+        // Resolve to the media-library attachment so Smush's CDN applies to the
+        // URL we hand the (client-rendered) size-guide modal.
+        $size_guide_url = trailingslashit( wp_get_upload_dir()['baseurl'] ) . '2023/05/aussie-plantar-fasciitis-white-socks-size-guide.jpg';
+        $size_guide_id  = attachment_url_to_postid( $size_guide_url );
+        if ( $size_guide_id ) {
+            $resolved = wp_get_attachment_image_url( $size_guide_id, 'large' );
+            if ( $resolved ) {
+                $size_guide_url = $resolved;
+            }
+        }
+        $size_guide_url = brand_theme_cdn_url( $size_guide_url );
         $size_guide = array(
-            'image' => trailingslashit( wp_get_upload_dir()['baseurl'] ) . '2023/05/aussie-plantar-fasciitis-white-socks-size-guide.jpg',
+            'image' => $size_guide_url,
             'rows'  => array(
                 __( 'S/M fits Women: shoe size 6-9 and Men: shoe size 5-8', 'brand-theme' ),
                 __( 'L/XL fits Women: shoe size 9-13 and Men: shoe size 8-12', 'brand-theme' ),
@@ -936,24 +1052,30 @@ function brand_theme_get_review_image_data( $filename ) {
 	// (admin attaches the image, we store its ID). Resolve to the uploaded file
 	// with a responsive srcset; Smush optimises it in prod and pull-uploads.sh
 	// brings it down locally. WebP is left to Smush's transparent delivery.
+	// Resolve to a media-library attachment when possible — a numeric ID (native
+	// reviews) or a local uploads URL (WooCommerce Photo Reviews stores full
+	// URLs). Building the data via wp_get_attachment_image_* means Smush's CDN
+	// and WebP rewriting apply automatically (they hook image_downsize / srcset).
+	$attachment_id = 0;
 	if ( is_numeric( $filename ) ) {
 		$attachment_id = intval( $filename );
-		$full          = wp_get_attachment_image_src( $attachment_id, 'large' );
-		if ( ! $full ) {
-			return null;
-		}
-		return array(
-			'src'    => esc_url( $full[0] ),
-			'srcset' => (string) wp_get_attachment_image_srcset( $attachment_id, 'large' ),
-			'webp'   => '',
-			'alt'    => trim( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) ),
-		);
+	} elseif ( preg_match( '#^(https?:)?//#i', $filename ) ) {
+		$attachment_id = attachment_url_to_postid( $filename );
 	}
 
-	// Externally hosted image — if `image` is already an absolute (or
-	// protocol-relative) URL, use it verbatim and skip all local/Vite/dist
-	// resolution. No srcset/WebP since we don't control the remote variants;
-	// rely on the external host (e.g. a CDN) for sizing/format.
+	if ( $attachment_id ) {
+		$full = wp_get_attachment_image_src( $attachment_id, 'large' );
+		if ( $full ) {
+			return array(
+				'src'    => esc_url( brand_theme_cdn_url( $full[0] ) ),
+				'srcset' => brand_theme_cdn_srcset( (string) wp_get_attachment_image_srcset( $attachment_id, 'large' ) ),
+				'webp'   => '',
+				'alt'    => trim( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) ),
+			);
+		}
+	}
+
+	// Truly external image (not in our media library) — use the URL verbatim.
 	if ( preg_match( '#^(https?:)?//#i', $filename ) ) {
 		return array(
 			'src'    => esc_url( $filename ),

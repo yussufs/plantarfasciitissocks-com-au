@@ -11,20 +11,22 @@ get_header();
 <main>
 
 	<!-- Hero — Full-bleed background image -->
-	<?php
-	// Background image lives in the WordPress media library (uploads), not the theme.
-	$hero_bg = trailingslashit( wp_get_upload_dir()['baseurl'] ) . '2023/04/Plantar-Fasciitis-Roller-Ball-Home-Page-For-Plantar-Fasciitis-Socks-Australia.jpg';
-	?>
 	<section class="relative isolate flex min-h-[60vh] items-center overflow-hidden lg:min-h-[70vh]">
-		<!-- Background image -->
-		<img
-			src="<?php echo esc_url( $hero_bg ); ?>"
-			alt=""
-			aria-hidden="true"
-			class="absolute inset-0 -z-20 h-full w-full object-cover object-center"
-			loading="eager"
-			fetchpriority="high"
-		/>
+		<!-- Background image (media library → Smush CDN / srcset) -->
+		<?php
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper returns escaped markup.
+		echo brand_theme_uploads_image(
+			'2023/04/Plantar-Fasciitis-Roller-Ball-Home-Page-For-Plantar-Fasciitis-Socks-Australia.jpg',
+			'',
+			'absolute inset-0 -z-20 h-full w-full object-cover object-center',
+			'full',
+			array(
+				'aria-hidden'   => 'true',
+				'loading'       => 'eager',
+				'fetchpriority' => 'high',
+			)
+		);
+		?>
 		<!-- Dark overlay for legibility -->
 		<div class="absolute inset-0 -z-10 bg-black/40"></div>
 
@@ -162,8 +164,6 @@ get_header();
 
 	<!-- Get Back on Your Feet — sock range -->
 	<?php
-	$uploads = trailingslashit( wp_get_upload_dir()['baseurl'] );
-
 	// Socks shown in this section. Add a new sock by appending to this array.
 	$sock_range = array(
 		array(
@@ -202,12 +202,14 @@ get_header();
 					?>
 					<a href="<?php echo esc_url( $sock_url ); ?>" class="group block">
 						<div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 transition group-hover:shadow-md">
-							<img
-								src="<?php echo esc_url( $uploads . $sock['image'] ); ?>"
-								alt="<?php echo esc_attr( $sock['title'] ); ?>"
-								class="h-auto w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-								loading="lazy"
-							/>
+							<?php
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper returns escaped markup.
+							echo brand_theme_uploads_image(
+								$sock['image'],
+								$sock['title'],
+								'h-auto w-full object-cover transition duration-300 group-hover:scale-[1.02]'
+							);
+							?>
 						</div>
 						<h3 class="mt-5 text-xl font-bold text-gray-900 group-hover:text-brand-600">
 							<?php echo esc_html( $sock['title'] ); ?>
