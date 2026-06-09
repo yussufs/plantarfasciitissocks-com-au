@@ -448,6 +448,16 @@
 
   /* ─── Product Gallery Carousel ─────────────────────────────────────── */
 
+  /* Reserve a square before the Svelte gallery hydrates, so it doesn't expand
+     and shove the page down (layout shift). :empty only matches the mount point
+     before Svelte renders its markup into it. */
+  #product-gallery:empty {
+    display: block;
+    aspect-ratio: 1 / 1;
+    border-radius: 0.75rem;
+    background-color: #f4f4f5;
+  }
+
   .product-gallery {
     display: grid;
     /* minmax(0, …) — without it a 1fr track grows to its content's
