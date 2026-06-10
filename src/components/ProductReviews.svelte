@@ -21,16 +21,57 @@
     productName = '',
   } = $props();
 
-  const INITIAL_VISIBLE = 4;
+  const INITIAL_VISIBLE = 9;
 
   let showAll = $state(false);
   let lightboxImage = $state(null);
 
+  // Filters: rating (0 = all, otherwise 1–5) and photos ('all' | 'with' | 'without').
+  let ratingFilter = $state(0);
+  let photoFilter = $state('all');
+
+  // How many reviews exist per star rating, and how many carry a photo —
+  // drives the filter button labels (and hides filters that match nothing).
+  let ratingCounts = $derived.by(() => {
+    const counts = {};
+    for (const r of reviews) counts[r.rating] = (counts[r.rating] || 0) + 1;
+    return counts;
+  });
+  let withPhotoCount = $derived(reviews.filter(r => r.image).length);
+  let availableRatings = $derived([5, 4, 3, 2, 1].filter(n => ratingCounts[n] > 0));
+
+  // Apply the active filters, then order: photo reviews first, then by highest
+  // rating. Array.sort is stable, so equal-rating reviews keep their original
+  // (date) order beneath.
+  let filteredReviews = $derived.by(() => {
+    const list = reviews.filter(r => {
+      if (ratingFilter && r.rating !== ratingFilter) return false;
+      if (photoFilter === 'with' && !r.image) return false;
+      if (photoFilter === 'without' && r.image) return false;
+      return true;
+    });
+    return [...list].sort((a, b) => {
+      const byImage = (b.image ? 1 : 0) - (a.image ? 1 : 0);
+      if (byImage !== 0) return byImage;
+      return b.rating - a.rating;
+    });
+  });
+
   let visibleReviews = $derived(
-    showAll ? reviews : reviews.slice(0, INITIAL_VISIBLE)
+    showAll ? filteredReviews : filteredReviews.slice(0, INITIAL_VISIBLE)
   );
 
-  let hasMore = $derived(reviews.length > INITIAL_VISIBLE);
+  let hasMore = $derived(filteredReviews.length > INITIAL_VISIBLE);
+
+  function setRating(n) {
+    ratingFilter = ratingFilter === n ? 0 : n;
+    showAll = false;
+  }
+
+  function setPhotoFilter(value) {
+    photoFilter = photoFilter === value ? 'all' : value;
+    showAll = false;
+  }
 
   function openLightbox(image) {
     lightboxImage = image;
@@ -130,8 +171,46 @@
   </div>
 </div>
 
-<!-- Review Grid -->
+<!-- Filters -->
+<div class="reviews-filters">
+  <div class="reviews-filter-group" role="group" aria-label="Filter by rating">
+    <button type="button" class="reviews-filter" class:is-active={ratingFilter === 0} onclick={() => setRating(0)}>
+      All
+    </button>
+    {#each availableRatings as n}
+      <button type="button" class="reviews-filter" class:is-active={ratingFilter === n} onclick={() => setRating(n)}>
+        {n}
+        <svg class="reviews-filter-star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+        <span class="reviews-filter-count">{ratingCounts[n]}</span>
+      </button>
+    {/each}
+  </div>
+
+  {#if withPhotoCount > 0}
+    <div class="reviews-filter-group" role="group" aria-label="Filter by photos">
+      <button type="button" class="reviews-filter" class:is-active={photoFilter === 'with'} onclick={() => setPhotoFilter('with')}>
+        <svg class="reviews-filter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <path d="M21 15l-5-5L5 21"></path>
+        </svg>
+        With photos
+        <span class="reviews-filter-count">{withPhotoCount}</span>
+      </button>
+      <button type="button" class="reviews-filter" class:is-active={photoFilter === 'without'} onclick={() => setPhotoFilter('without')}>
+        Without photos
+      </button>
+    </div>
+  {/if}
+</div>
+
+<!-- Review Grid (masonry) -->
 <div class="reviews-grid">
+  {#if visibleReviews.length === 0}
+    <p class="reviews-empty">No reviews match these filters.</p>
+  {/if}
   {#each visibleReviews as review (review.id)}
     <div class="review-card">
       <!-- Stars -->
@@ -211,7 +290,7 @@
 {#if hasMore && !showAll}
   <div class="reviews-show-more">
     <button type="button" class="reviews-show-more-btn" onclick={() => { showAll = true; }}>
-      Show All {reviews.length} Reviews
+      Show All {filteredReviews.length} Reviews
     </button>
   </div>
 {/if}
@@ -302,19 +381,102 @@
     color: #71717a;
   }
 
-  /* ── Grid ────────────────────────────────────── */
+  /* ── Filters ─────────────────────────────────── */
 
-  .reviews-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
+  .reviews-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin-bottom: 1.25rem;
   }
 
-  @media (min-width: 768px) {
+  .reviews-filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .reviews-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.4375rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #3f3f46;
+    background: #fff;
+    border: 1px solid #d4d4d8;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+  }
+
+  .reviews-filter:hover {
+    background: #f4f4f5;
+    border-color: #a1a1aa;
+  }
+
+  .reviews-filter.is-active {
+    color: #fff;
+    background: #e24411;
+    border-color: #e24411;
+  }
+
+  .reviews-filter:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+
+  .reviews-filter-star {
+    width: 0.875rem;
+    height: 0.875rem;
+    color: #f59e0b;
+  }
+
+  .reviews-filter.is-active .reviews-filter-star {
+    color: #fde68a;
+  }
+
+  .reviews-filter-icon {
+    width: 0.9375rem;
+    height: 0.9375rem;
+  }
+
+  .reviews-filter-count {
+    font-weight: 500;
+    opacity: 0.65;
+  }
+
+  /* ── Grid (masonry via CSS columns) ──────────── */
+
+  .reviews-grid {
+    columns: 1;
+    column-gap: 1rem;
+  }
+
+  @media (min-width: 640px) {
     .reviews-grid {
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1.25rem;
+      columns: 2;
     }
+  }
+
+  @media (min-width: 1024px) {
+    .reviews-grid {
+      columns: 3;
+      column-gap: 1.25rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .reviews-grid {
+      columns: 4;
+    }
+  }
+
+  .reviews-empty {
+    color: #71717a;
+    font-size: 0.9375rem;
+    margin: 0;
   }
 
   /* ── Card ────────────────────────────────────── */
@@ -327,6 +489,14 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+
+  @media (min-width: 1024px) {
+    .review-card {
+      margin-bottom: 1.25rem;
+    }
   }
 
   .review-stars {

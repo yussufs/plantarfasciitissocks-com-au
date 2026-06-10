@@ -19,13 +19,19 @@
     return (Number(tier.price) / tier.qty).toFixed(2);
   }
 
-  // Saving vs buying the same quantity at the normal unit price.
+  // "Regular" total to compare against: an explicit per-tier `regular` price if
+  // provided (e.g. the foot massager), otherwise the product's unit price × qty.
+  function tierRegular(tier) {
+    return tier.regular != null ? Number(tier.regular) : unitPrice * tier.qty;
+  }
+
+  // Saving vs the regular total above.
   function savings(tier) {
-    return ((unitPrice * tier.qty) - Number(tier.price)).toFixed(2);
+    return (tierRegular(tier) - Number(tier.price)).toFixed(2);
   }
 
   function percentOff(tier) {
-    const full = unitPrice * tier.qty;
+    const full = tierRegular(tier);
     if (full <= 0) return 0;
     return Math.round((1 - Number(tier.price) / full) * 100);
   }
@@ -56,7 +62,12 @@
           {/if}
         </span>
         <span class="text-right">
-          <span class="text-sm font-bold text-zinc-900">{currencySymbol}{tierPrice(tier)}</span>
+          <span>
+            <span class="text-sm font-bold text-zinc-900">{currencySymbol}{tierPrice(tier)}</span>
+            {#if tierRegular(tier) > Number(tier.price)}
+              <span class="ml-1 text-xs text-zinc-400 line-through">{currencySymbol}{tierRegular(tier).toFixed(2)}</span>
+            {/if}
+          </span>
           {#if tier.qty > 1}
             <span class="block text-xs text-zinc-500">{currencySymbol}{tierUnitPrice(tier)} each</span>
           {/if}

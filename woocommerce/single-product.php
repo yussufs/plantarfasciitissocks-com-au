@@ -8,6 +8,17 @@
 defined( 'ABSPATH' ) || exit;
 
 get_header();
+
+// Custom, long-form landing page for the Triple Therapy Foot Massager (cold/ad
+// traffic). Renders full-width and bypasses the generic 2-column layout below.
+$queried_product = wc_get_product( get_queried_object_id() );
+if ( $queried_product && 'triple-therapy-foot-massager' === $queried_product->get_slug() ) {
+    global $product;
+    $product = $queried_product;
+    get_template_part( 'template-parts/content/single-product/landing-triple-therapy-foot-massager' );
+    get_footer();
+    return;
+}
 ?>
 
 <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

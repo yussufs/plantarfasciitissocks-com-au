@@ -46,6 +46,16 @@
     @apply block text-xs text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-700;
   }
 
+  /* Long-form product landing page — leave room for the sticky mobile bar. */
+  .landing-page {
+    @apply pb-20 lg:pb-0;
+  }
+
+  /* Sticky mobile add-to-cart bar (landing page). */
+  .landing-sticky-bar {
+    @apply fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 px-4 py-3 shadow-[0_-2px_10px_rgba(0,0,0,0.06)] backdrop-blur;
+  }
+
   .announcement-bar {
     @apply bg-brand-600 py-2 text-center text-sm font-extrabold uppercase tracking-[0.08em] text-white;
   }
@@ -1132,4 +1142,12 @@
     @apply text-zinc-500 no-underline hover:text-zinc-700;
   }
 
+}
+
+/* On the landing page the sticky add-to-cart bar owns the bottom on mobile, so
+   hide the global scroll-to-top button there to stop it overlapping the CTA. */
+@media (max-width: 1023px) {
+  body:has(.landing-sticky-bar) #scroll-to-top {
+    display: none !important;
+  }
 }

@@ -647,11 +647,11 @@ function brand_theme_get_product_svelte_data( $product ) {
         }
     }
 
-    // Bundle tiers — socks only for now. Fixed bundle prices (not %), enforced
-    // server-side as a negative cart fee (see brand_theme_apply_bundle_discount).
-    $bundle_tiers = has_term( 'plantar-fasciitis-socks', 'product_cat', $product_id )
-        ? brand_theme_sock_bundle_tiers()
-        : array();
+    // Bundle tiers — per-product meta first, then the socks category default.
+    // Fixed bundle prices (not %), enforced server-side as a negative cart fee
+    // (socks: brand_theme_apply_bundle_discount; meta-driven products such as the
+    // foot massager: brand_theme_apply_meta_bundle_discount).
+    $bundle_tiers = brand_theme_get_bundle_tiers( $product_id );
 
     // Prices.
     $regular_price = (float) $product->get_regular_price();
@@ -755,6 +755,71 @@ function brand_theme_sock_bundle_unit_price( $qty ) {
 }
 
 /**
+ * Foot massager bundle tiers — fixed total price per quantity. Coded default for
+ * the Triple Therapy Foot Massager landing page; overridable per-product via the
+ * `_brand_bundle_tiers` meta box.
+ *
+ * @return array<int, array{qty:int, price:float, label:string, badge:string}>
+ */
+function brand_theme_massager_bundle_tiers() {
+    return array(
+        array( 'qty' => 1, 'price' => 69.00, 'regular' => 99.00, 'label' => '1 Massager', 'badge' => '' ),
+        array( 'qty' => 2, 'price' => 99.00, 'regular' => 180.00, 'label' => '2 Massagers', 'badge' => 'Most Popular' ),
+    );
+}
+
+/**
+ * Resolve bundle tiers for a product: per-product `_brand_bundle_tiers` meta
+ * (JSON) first, then coded defaults by category/slug, else none. This is what
+ * makes bundles generic — any product can opt in by setting the meta in wp-admin
+ * (Brand Theme → Product Extras → "Bundle Tiers"), while socks and the foot
+ * massager ship with coded defaults.
+ *
+ * @param int $product_id
+ * @return array<int, array{qty:int, price:float, label:string, badge:string}>
+ */
+function brand_theme_get_bundle_tiers( $product_id ) {
+    $meta = get_post_meta( $product_id, '_brand_bundle_tiers', true );
+    if ( $meta ) {
+        $decoded = json_decode( $meta, true );
+        if ( is_array( $decoded ) && ! empty( $decoded ) ) {
+            return array_values( $decoded );
+        }
+    }
+
+    if ( has_term( 'plantar-fasciitis-socks', 'product_cat', $product_id ) ) {
+        return brand_theme_sock_bundle_tiers();
+    }
+
+    if ( 'triple-therapy-foot-massager' === get_post_field( 'post_name', $product_id ) ) {
+        return brand_theme_massager_bundle_tiers();
+    }
+
+    return array();
+}
+
+/**
+ * Per-unit price for an arbitrary tier set at a given quantity (the highest tier
+ * reached). Generic counterpart to brand_theme_sock_bundle_unit_price().
+ *
+ * @param array<int, array{qty:int, price:float}> $tiers
+ * @param int                                     $qty
+ * @return float
+ */
+function brand_theme_bundle_unit_price( $tiers, $qty ) {
+    if ( empty( $tiers ) ) {
+        return 0.0;
+    }
+    $unit = (float) $tiers[0]['price'] / max( 1, (int) $tiers[0]['qty'] );
+    foreach ( $tiers as $tier ) {
+        if ( $qty >= (int) $tier['qty'] ) {
+            $unit = (float) $tier['price'] / max( 1, (int) $tier['qty'] );
+        }
+    }
+    return $unit;
+}
+
+/**
  * Apply the sock bundle discount as a negative cart fee.
  */
 function brand_theme_apply_bundle_discount( $cart ) {
@@ -815,6 +880,81 @@ function brand_theme_apply_bundle_discount( $cart ) {
     }
 }
 add_action( 'woocommerce_cart_calculate_fees', 'brand_theme_apply_bundle_discount' );
+
+/**
+ * Apply per-product bundle discounts for products that define their own tiers via
+ * `_brand_bundle_tiers` meta (e.g. the Triple Therapy Foot Massager: 1 = $49,
+ * 2 = $75). Aggregates quantity per parent product so Black + Gray together still
+ * reach the 2-pack price. Socks are intentionally skipped — they're handled by
+ * brand_theme_apply_bundle_discount above. Kept as a separate hook so the socks
+ * path is untouched.
+ */
+function brand_theme_apply_meta_bundle_discount( $cart ) {
+    if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
+        return;
+    }
+    if ( ! $cart || ! is_a( $cart, 'WC_Cart' ) ) {
+        return;
+    }
+
+    // Aggregate by parent product: qty + customer-facing (incl-tax) and ex-tax totals.
+    $groups = array();
+    foreach ( $cart->get_cart() as $item ) {
+        $product = $item['data'] ?? null;
+        if ( ! $product ) {
+            continue;
+        }
+        $parent_id = $product->is_type( 'variation' ) ? $product->get_parent_id() : $product->get_id();
+
+        // Socks have their own dedicated discount pass — never double-count them.
+        if ( has_term( 'plantar-fasciitis-socks', 'product_cat', $parent_id ) ) {
+            continue;
+        }
+
+        $tiers = brand_theme_get_bundle_tiers( $parent_id );
+        if ( count( $tiers ) < 2 ) {
+            continue;
+        }
+
+        $qty = (int) $item['quantity'];
+        if ( ! isset( $groups[ $parent_id ] ) ) {
+            $groups[ $parent_id ] = array(
+                'qty'       => 0,
+                'incl'      => 0.0,
+                'excl'      => 0.0,
+                'tax_class' => $product->get_tax_class(),
+                'tiers'     => $tiers,
+            );
+        }
+        $groups[ $parent_id ]['qty']  += $qty;
+        $groups[ $parent_id ]['incl'] += (float) wc_get_price_including_tax( $product, array( 'qty' => $qty ) );
+        $groups[ $parent_id ]['excl'] += (float) wc_get_price_excluding_tax( $product, array( 'qty' => $qty ) );
+    }
+
+    foreach ( $groups as $group ) {
+        if ( $group['qty'] < 2 ) {
+            continue; // No bundle discount for a single unit.
+        }
+
+        $bundle_total_incl = brand_theme_bundle_unit_price( $group['tiers'], $group['qty'] ) * $group['qty'];
+        $discount_incl     = round( $group['incl'] - $bundle_total_incl, 2 );
+
+        if ( $discount_incl <= 0 ) {
+            continue;
+        }
+
+        // Same tax-inclusive fee maths as the socks path: WooCommerce treats fees
+        // as ex-tax, so in a tax-inclusive store we hand it the ex-tax discount as
+        // a taxable fee and let WC add the tax back to land on the exact bundle total.
+        if ( wc_prices_include_tax() && $group['incl'] > 0 ) {
+            $discount_excl = $discount_incl * ( $group['excl'] / $group['incl'] );
+            $cart->add_fee( __( 'Bundle discount', 'brand-theme' ), -1 * $discount_excl, true, $group['tax_class'] );
+        } else {
+            $cart->add_fee( __( 'Bundle discount', 'brand-theme' ), -1 * $discount_incl, false );
+        }
+    }
+}
+add_action( 'woocommerce_cart_calculate_fees', 'brand_theme_apply_meta_bundle_discount' );
 
 // ──────────────────────────────────────────────
 // Product Meta Boxes

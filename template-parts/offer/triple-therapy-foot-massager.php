@@ -107,7 +107,7 @@ $offer_image = static function ( $file, $alt, $class ) {
 			<!-- Black -->
 			<div class="flex flex-col rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-zinc-200">
 				<h3 class="text-xl font-bold text-zinc-900"><?php esc_html_e( 'Get 50% OFF The Black Version', 'brand-theme' ); ?></h3>
-				<?php $offer_image( '2026/05/Triple-Therapy-Foot-Massager-Black-OG-scaled.jpg', __( 'Triple Therapy Foot Massager — Black', 'brand-theme' ), 'mx-auto mt-4 aspect-square w-full max-w-sm rounded-xl object-cover' ); ?>
+				<?php $offer_image( '2026/05/secondary-main-black-foot-massager.jpg', __( 'Triple Therapy Foot Massager — Black', 'brand-theme' ), 'mx-auto mt-4 aspect-square w-full max-w-sm rounded-xl object-cover' ); ?>
 				<a href="<?php echo esc_url( $accept_black ); ?>" class="offer-cta offer-cta--block mt-6">
 					<?php esc_html_e( 'Add The Black One To My Order — $49', 'brand-theme' ); ?>
 				</a>
@@ -118,7 +118,7 @@ $offer_image = static function ( $file, $alt, $class ) {
 			<!-- Gray -->
 			<div class="flex flex-col rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-zinc-200">
 				<h3 class="text-xl font-bold text-zinc-900"><?php esc_html_e( 'Get 50% OFF The Gray Version', 'brand-theme' ); ?></h3>
-				<?php $offer_image( '2026/05/Triple-Therapy-Foot-Massager-Grey-OG-scaled.jpg', __( 'Triple Therapy Foot Massager — Grey', 'brand-theme' ), 'mx-auto mt-4 aspect-square w-full max-w-sm rounded-xl object-cover' ); ?>
+				<?php $offer_image( '2026/05/secondary-main-gray-foot-massager.jpg', __( 'Triple Therapy Foot Massager — Grey', 'brand-theme' ), 'mx-auto mt-4 aspect-square w-full max-w-sm rounded-xl object-cover' ); ?>
 				<a href="<?php echo esc_url( $accept_gray ); ?>" class="offer-cta offer-cta--block mt-6">
 					<?php esc_html_e( 'Add The Gray One To My Order — $49', 'brand-theme' ); ?>
 				</a>
