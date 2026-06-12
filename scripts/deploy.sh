@@ -90,6 +90,23 @@ rsync -avz --delete $DRY_RUN \
     -e "ssh -i '$SSH_KEY' -p $SSH_PORT -o StrictHostKeyChecking=accept-new" \
     ./ "$SSH_USER@$SSH_HOST:$REMOTE_PATH/"
 
+# ── Clear caches ─────────────────────────────────────────────────────────────
+# REMOTE_PATH points at the theme dir; WP-CLI needs the WP root, so strip
+# everything from /wp-content/ onwards. Both flushes are best-effort:
+# `wp cache flush` clears the object cache; `wp litespeed-purge` clears the
+# LiteSpeed page cache only if that plugin is installed.
+if [ -z "$DRY_RUN" ]; then
+    echo "==> Clearing remote caches..."
+    ssh -i "$SSH_KEY" -p "$SSH_PORT" -o StrictHostKeyChecking=accept-new \
+        "$SSH_USER@$SSH_HOST" "REMOTE_PATH='$REMOTE_PATH' bash -s" <<'REMOTE'
+WP_ROOT="${REMOTE_PATH%%/wp-content/*}"
+WP_ROOT="${WP_ROOT/#\~/$HOME}"
+cd "$WP_ROOT" || { echo "    ✖ Could not cd to WP root ($WP_ROOT) — skipping cache flush."; exit 0; }
+wp cache flush 2>/dev/null && echo "    ✓ Object cache flushed." || echo "    – Object cache flush skipped."
+wp litespeed-purge all 2>/dev/null && echo "    ✓ LiteSpeed cache purged." || echo "    – LiteSpeed purge skipped (plugin not installed)."
+REMOTE
+fi
+
 echo ""
 echo "==> Done."
 [ -z "$DRY_RUN" ] && echo "    Live: https://${DOMAIN:-yussufs.com}/"

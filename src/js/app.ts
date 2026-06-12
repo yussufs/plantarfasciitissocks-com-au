@@ -19,9 +19,14 @@ if (exampleEl) {
 
 const galleryEl = document.getElementById('product-gallery');
 if (galleryEl) {
+  const galleryProps = JSON.parse(galleryEl.dataset.config || '{}');
+  // The PHP template server-renders the first gallery frame inside the mount
+  // point (for LCP). mount() appends rather than replaces, so clear it first —
+  // mount() renders synchronously, so there's no flash between the two.
+  galleryEl.replaceChildren();
   mount(ProductGallery, {
     target: galleryEl,
-    props: JSON.parse(galleryEl.dataset.config || '{}'),
+    props: galleryProps,
   });
 }
 

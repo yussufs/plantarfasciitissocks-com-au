@@ -54,3 +54,24 @@ jobs:
           remote_user: ${{ secrets.SSH_USER }}
           remote_key: ${{ secrets.SSH_KEY }}
           remote_port: ${{ secrets.SSH_PORT }}
+
+      # REMOTE_PATH points at the theme dir; WP-CLI needs the WP root, so strip
+      # everything from /wp-content/ onwards. Both flushes are best-effort:
+      # `wp cache flush` clears the object cache; `wp litespeed-purge` clears the
+      # LiteSpeed page cache only if that plugin is installed.
+      - name: Clear caches
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: REMOTE_PATH
+          script: |
+            WP_ROOT="${REMOTE_PATH%%/wp-content/*}"
+            WP_ROOT="${WP_ROOT/#\~/$HOME}"
+            cd "$WP_ROOT" || { echo "Could not cd to WP root ($WP_ROOT) — skipping cache flush."; exit 0; }
+            wp cache flush 2>/dev/null && echo "Object cache flushed." || echo "Object cache flush skipped."
+            wp litespeed-purge all 2>/dev/null && echo "LiteSpeed cache purged." || echo "LiteSpeed purge skipped (plugin not installed)."
+        env:
+          REMOTE_PATH: ${{ secrets.REMOTE_PATH }}

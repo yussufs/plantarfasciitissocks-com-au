@@ -80,7 +80,48 @@ while ( have_posts() ) :
         <div class="min-w-0 lg:sticky lg:top-8 lg:self-start">
             <div id="product-gallery" data-config='<?php echo esc_attr( wp_json_encode( array(
                 'images' => $svelte_data['images'],
-            ) ) ); ?>'></div>
+            ) ) ); ?>'>
+                <?php
+                // Server-rendered first frame so the LCP image exists in the
+                // initial HTML — the browser starts downloading and paints it
+                // before the JS bundle hydrates. Markup mirrors
+                // ProductGallery.svelte exactly; app.ts clears it just before
+                // mounting the component.
+                $gallery_images = $svelte_data['images'];
+                $first_image    = $gallery_images[0] ?? null;
+                if ( $first_image ) :
+                ?>
+                <div class="product-gallery">
+                    <div class="product-gallery-viewport">
+                        <div class="product-gallery-container">
+                            <div class="product-gallery-slide">
+                                <img
+                                    src="<?php echo esc_url( $first_image['src'] ); ?>"
+                                    alt="<?php echo esc_attr( $first_image['alt'] ); ?>"
+                                    loading="eager"
+                                    fetchpriority="high"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <?php if ( count( $gallery_images ) > 1 ) : ?>
+                    <div class="product-gallery-thumbs">
+                        <div class="product-gallery-thumbs-scroll">
+                            <?php foreach ( $gallery_images as $i => $gallery_image ) : ?>
+                                <button
+                                    type="button"
+                                    class="product-gallery-thumb<?php echo 0 === $i ? ' is-active' : ''; ?>"
+                                    aria-label="<?php echo esc_attr( sprintf( __( 'View image %d', 'brand-theme' ), $i + 1 ) ); ?>"
+                                >
+                                    <img src="<?php echo esc_url( $gallery_image['thumb'] ); ?>" alt="" loading="lazy" />
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
+            </div>
         </div>
 
         <!-- Details Column -->

@@ -458,9 +458,9 @@
 
   /* ─── Product Gallery Carousel ─────────────────────────────────────── */
 
-  /* Reserve a square before the Svelte gallery hydrates, so it doesn't expand
-     and shove the page down (layout shift). :empty only matches the mount point
-     before Svelte renders its markup into it. */
+  /* Fallback: reserve a square if the mount point is ever empty pre-hydration.
+     Normally single-product.php server-renders the first frame inside it, so
+     this only matches if that markup is missing (e.g. product with no image). */
   #product-gallery:empty {
     display: block;
     aspect-ratio: 1 / 1;
