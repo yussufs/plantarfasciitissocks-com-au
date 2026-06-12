@@ -78,50 +78,10 @@ while ( have_posts() ) :
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-12">
         <!-- Gallery Column -->
         <div class="min-w-0 lg:sticky lg:top-8 lg:self-start">
-            <div id="product-gallery" data-config='<?php echo esc_attr( wp_json_encode( array(
-                'images' => $svelte_data['images'],
-            ) ) ); ?>'>
-                <?php
-                // Server-rendered first frame so the LCP image exists in the
-                // initial HTML — the browser starts downloading and paints it
-                // before the JS bundle hydrates. Markup mirrors
-                // ProductGallery.svelte exactly; app.ts clears it just before
-                // mounting the component.
-                $gallery_images = $svelte_data['images'];
-                $first_image    = $gallery_images[0] ?? null;
-                if ( $first_image ) :
-                ?>
-                <div class="product-gallery">
-                    <div class="product-gallery-viewport">
-                        <div class="product-gallery-container">
-                            <div class="product-gallery-slide">
-                                <img
-                                    src="<?php echo esc_url( $first_image['src'] ); ?>"
-                                    alt="<?php echo esc_attr( $first_image['alt'] ); ?>"
-                                    loading="eager"
-                                    fetchpriority="high"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <?php if ( count( $gallery_images ) > 1 ) : ?>
-                    <div class="product-gallery-thumbs">
-                        <div class="product-gallery-thumbs-scroll">
-                            <?php foreach ( $gallery_images as $i => $gallery_image ) : ?>
-                                <button
-                                    type="button"
-                                    class="product-gallery-thumb<?php echo 0 === $i ? ' is-active' : ''; ?>"
-                                    aria-label="<?php echo esc_attr( sprintf( __( 'View image %d', 'brand-theme' ), $i + 1 ) ); ?>"
-                                >
-                                    <img src="<?php echo esc_url( $gallery_image['thumb'] ); ?>" alt="" loading="lazy" />
-                                </button>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                </div>
-                <?php endif; ?>
-            </div>
+            <?php
+            set_query_var( 'gallery_images', $svelte_data['images'] );
+            get_template_part( 'template-parts/content/single-product/gallery' );
+            ?>
         </div>
 
         <!-- Details Column -->
@@ -146,20 +106,12 @@ while ( have_posts() ) :
                 </a>
             <?php endif; ?>
 
-            <!-- Server-rendered price (SEO) — hidden when Svelte mounts -->
-            <div id="product-price-static" class="flex items-center gap-3">
-                <?php if ( $product->is_on_sale() ) : ?>
-                    <span class="product-price"><?php echo wp_kses_post( wc_price( $product->get_sale_price() ) ); ?></span>
-                    <span class="product-price-compare"><?php echo wp_kses_post( wc_price( $product->get_regular_price() ) ); ?></span>
-                <?php else : ?>
-                    <span class="product-price"><?php echo wp_kses_post( wc_price( $product->get_regular_price() ) ); ?></span>
-                <?php endif; ?>
-            </div>
-
             <?php get_template_part( 'template-parts/content/single-product/trust-badges' ); ?>
 
-            <!-- Svelte interactive options (swatches, bundles, CTA buttons) -->
-            <div id="product-options" data-config='<?php echo esc_attr( wp_json_encode( $svelte_data ) ); ?>'></div>
+            <?php
+            set_query_var( 'svelte_data', $svelte_data );
+            get_template_part( 'template-parts/content/single-product/price-options' );
+            ?>
 
             <?php get_template_part( 'template-parts/content/single-product/payment-icons' ); ?>
 

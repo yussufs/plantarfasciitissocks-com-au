@@ -65,7 +65,10 @@ $ttfm_video = static function ( $file ) use ( $uploads ) {
 		<div class="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-12">
 			<!-- Gallery -->
 			<div class="min-w-0 lg:sticky lg:top-8 lg:self-start">
-				<div id="product-gallery" data-config='<?php echo esc_attr( wp_json_encode( array( 'images' => $svelte_data['images'] ) ) ); ?>'></div>
+				<?php
+				set_query_var( 'gallery_images', $svelte_data['images'] );
+				get_template_part( 'template-parts/content/single-product/gallery' );
+				?>
 			</div>
 
 			<!-- Details -->
@@ -90,20 +93,12 @@ $ttfm_video = static function ( $file ) use ( $uploads ) {
 					</a>
 				<?php endif; ?>
 
-				<!-- Server-rendered price (SEO) — hidden when Svelte mounts -->
-				<div id="product-price-static" class="flex items-center gap-3">
-					<?php if ( $product->is_on_sale() ) : ?>
-						<span class="product-price"><?php echo wp_kses_post( wc_price( $product->get_sale_price() ) ); ?></span>
-						<span class="product-price-compare"><?php echo wp_kses_post( wc_price( $product->get_regular_price() ) ); ?></span>
-					<?php else : ?>
-						<span class="product-price"><?php echo wp_kses_post( wc_price( $product->get_regular_price() ) ); ?></span>
-					<?php endif; ?>
-				</div>
-
 				<?php get_template_part( 'template-parts/content/single-product/trust-badges' ); ?>
 
-				<!-- Svelte: colour swatches + bundle selector + add-to-cart -->
-				<div id="product-options" data-config='<?php echo esc_attr( wp_json_encode( $svelte_data ) ); ?>'></div>
+				<?php
+				set_query_var( 'svelte_data', $svelte_data );
+				get_template_part( 'template-parts/content/single-product/price-options' );
+				?>
 
 				<?php get_template_part( 'template-parts/content/single-product/payment-icons' ); ?>
 

@@ -458,6 +458,15 @@
 
   /* ─── Product Gallery Carousel ─────────────────────────────────────── */
 
+  /* Reserve space for the options UI before Svelte hydrates, so the content
+     below it (payment icons, delivery, accordions) doesn't shift down (CLS).
+     The per-product estimate is computed in single-product.php and passed via
+     the --options-min-h custom property; :empty stops matching the moment the
+     component renders, so an over-estimate never leaves blank space behind. */
+  #product-options:empty {
+    min-height: var(--options-min-h, 360px);
+  }
+
   /* Fallback: reserve a square if the mount point is ever empty pre-hydration.
      Normally single-product.php server-renders the first frame inside it, so
      this only matches if that markup is missing (e.g. product with no image). */

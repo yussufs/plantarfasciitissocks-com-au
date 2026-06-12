@@ -719,6 +719,47 @@ function brand_theme_get_product_svelte_data( $product ) {
 }
 
 // ──────────────────────────────────────────────
+// LCP Image Preload
+// ──────────────────────────────────────────────
+
+/**
+ * Preload the product's first gallery image (the LCP element) from the head.
+ * Mirrors the first-image logic in brand_theme_get_product_svelte_data() so
+ * the preloaded URL is byte-identical to the server-rendered gallery frame —
+ * the browser makes exactly one request.
+ */
+function brand_theme_preload_lcp_image() {
+	if ( ! function_exists( 'is_product' ) || ! is_product() ) {
+		return;
+	}
+
+	$product = wc_get_product( get_queried_object_id() );
+	if ( ! $product ) {
+		return;
+	}
+
+	$image_id = $product->get_image_id();
+	if ( ! $image_id ) {
+		$gallery_ids = $product->get_gallery_image_ids();
+		$image_id    = $gallery_ids[0] ?? 0;
+	}
+	if ( ! $image_id ) {
+		return;
+	}
+
+	$url = wp_get_attachment_image_url( $image_id, 'large' );
+	if ( ! $url ) {
+		return;
+	}
+
+	printf(
+		'<link rel="preload" as="image" href="%s" fetchpriority="high">' . "\n",
+		esc_url( brand_theme_cdn_url( $url ) )
+	);
+}
+add_action( 'wp_head', 'brand_theme_preload_lcp_image', 5 );
+
+// ──────────────────────────────────────────────
 // Sock Bundles
 //
 // WooCommerce can't apply a percentage discount to the cart without a coupon,
