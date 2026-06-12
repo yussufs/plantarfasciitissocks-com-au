@@ -84,11 +84,16 @@
   let matchedVariation = $derived.by(() => {
     if (productType !== 'variable' || variations.length === 0) return null;
 
+    // Iterate the variation's own attributes: every one must be "any"
+    // (empty string) or equal the user's selection for that attribute.
+    // Iterating this direction means a key mismatch between the selected
+    // attributes and the variation data yields NO match (a visible error)
+    // rather than silently matching the first variation.
     return variations.find(v => {
-      return Object.entries(selectedAttributes).every(([attr, value]) => {
-        const varAttrKey = `attribute_${attr}`;
-        // Empty string in variation means "any".
-        return !v.attributes[varAttrKey] || v.attributes[varAttrKey] === value;
+      return Object.entries(v.attributes).every(([varAttrKey, varValue]) => {
+        if (!varValue) return true; // empty = "any"
+        const attr = varAttrKey.replace(/^attribute_/, '');
+        return selectedAttributes[attr] === varValue;
       });
     }) || null;
   });

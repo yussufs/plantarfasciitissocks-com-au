@@ -41,9 +41,12 @@
   async function fetchCart() {
     isLoadingCart = true;
     try {
-      const res = await fetch('/wp-json/wc/store/v1/cart', {
+      // Cache-bust with a timestamp and no-store: hosting page caches
+      // (LiteSpeed on Hostinger) can cache guest REST GETs, which left the
+      // drawer rendering a stale cart snapshot.
+      const res = await fetch(`/wp-json/wc/store/v1/cart?_=${Date.now()}`, {
         credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
       });
       if (res.ok) {
         const data = await res.json();
@@ -77,6 +80,33 @@
     }
     window.addEventListener('cart:item-added', handleItemAdded);
     return () => window.removeEventListener('cart:item-added', handleItemAdded);
+  });
+
+  // Refetch whenever the cart changes elsewhere: our own components dispatch
+  // 'cart:updated', and WooCommerce core (mini-cart removals, quantity
+  // updates, fragment refreshes) announces changes via jQuery events.
+  $effect(() => {
+    function refresh() {
+      fetchCart();
+    }
+    window.addEventListener('cart:updated', refresh);
+
+    // bfcache: browser back from the cart/checkout page restores this page
+    // (and the drawer's state) from memory — refetch so it isn't stale.
+    function onPageShow(e) {
+      if (e.persisted) fetchCart();
+    }
+    window.addEventListener('pageshow', onPageShow);
+
+    const jq = window.jQuery;
+    const jqEvents = 'added_to_cart removed_from_cart updated_wc_div updated_cart_totals';
+    if (jq) jq(document.body).on(jqEvents, refresh);
+
+    return () => {
+      window.removeEventListener('cart:updated', refresh);
+      window.removeEventListener('pageshow', onPageShow);
+      if (jq) jq(document.body).off(jqEvents, refresh);
+    };
   });
 
   // Pause auto-close on hover

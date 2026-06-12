@@ -621,6 +621,12 @@ function brand_theme_get_product_svelte_data( $product ) {
             $taxonomy  = str_replace( 'attribute_', '', $attr_name );
             $is_colour = stripos( $taxonomy, 'color' ) !== false || stripos( $taxonomy, 'colour' ) !== false;
 
+            // Key by the sanitized attribute name so the front end can match
+            // against variation attribute keys (attribute_{sanitized-name}).
+            // Custom attributes like "Size" are stored on variations as
+            // "attribute_size" — the raw name would never match.
+            $attr_key = sanitize_title( $attr_name );
+
             if ( $is_colour ) {
                 $swatches = array();
                 foreach ( $options as $option ) {
@@ -632,7 +638,7 @@ function brand_theme_get_product_svelte_data( $product ) {
                         'hex'   => $color_hex ?: null,
                     );
                 }
-                $color_attributes[ $attr_name ] = $swatches;
+                $color_attributes[ $attr_key ] = $swatches;
             } else {
                 $choices = array();
                 foreach ( $options as $option ) {
@@ -642,7 +648,7 @@ function brand_theme_get_product_svelte_data( $product ) {
                         'label' => $term ? $term->name : ucfirst( str_replace( '-', ' ', $option ) ),
                     );
                 }
-                $select_attributes[ $attr_name ] = $choices;
+                $select_attributes[ $attr_key ] = $choices;
             }
         }
     }
