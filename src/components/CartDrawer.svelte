@@ -16,7 +16,7 @@
   let autoCloseTimer = $state(null);
 
   function open(productName, qty) {
-    addedProductName = productName;
+    addedProductName = decodeEntities(productName);
     addedQty = qty;
     isOpen = true;
     fetchCart();
@@ -52,7 +52,7 @@
         const data = await res.json();
         cartItems = (data.items || []).map(item => ({
           key: item.key,
-          name: item.name,
+          name: decodeEntities(item.name),
           qty: item.quantity,
           price: formatPrice(item.prices?.price, item.prices?.currency_minor_unit ?? 2),
           image: item.images?.[0]?.thumbnail || item.images?.[0]?.src || '',
@@ -70,6 +70,13 @@
     if (!raw) return '';
     const num = parseInt(raw, 10) / Math.pow(10, decimals);
     return '$' + num.toFixed(2);
+  }
+
+  // The Store API returns names HTML-encoded (e.g. &#8211; for –), but Svelte
+  // text interpolation escapes them — decode so entities don't render literally.
+  // DOMParser produces an inert document: no script execution, no resource loads.
+  function decodeEntities(html) {
+    return new DOMParser().parseFromString(html || '', 'text/html').documentElement.textContent;
   }
 
   // Listen for add-to-cart events
